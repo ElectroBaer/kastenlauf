@@ -92,6 +92,33 @@ export class PositionTracker {
     }
   }
 
+  /**
+   * Holt einmalig eine Position. Gedacht für den Moment, in dem die Seite
+   * wieder sichtbar wird: `watchPosition` liefert währenddessen nichts, der
+   * letzte bekannte Fix kann also weit veraltet sein.
+   *
+   * `maximumAge: 10000` ist hier wichtig. Mit 0 wartet der Browser auf eine
+   * frisch gemessene Position, was je nach Empfang dauert — und solange
+   * parallel ein `watchPosition` läuft, kommt die Antwort teils gar nicht.
+   * Ein bis zu 10 s alter Fix liegt im Gehtempo rund 13 m daneben und damit
+   * bequem innerhalb des Trigger-Radius, kommt dafür aber sofort.
+   */
+  refresh(): void {
+    if (this.simulated || !('geolocation' in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      (position) =>
+        this.emit({
+          coords: { lat: position.coords.latitude, lng: position.coords.longitude },
+          accuracy: position.coords.accuracy,
+          simulated: false,
+        }),
+      () => {
+        // Stillschweigend: watchPosition meldet dauerhafte Probleme ohnehin.
+      },
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 },
+    );
+  }
+
   /** Setzt eine simulierte Position (Debug-Modus) oder hebt sie mit `null` auf. */
   simulate(coords: LatLng | null): void {
     this.simulated = coords;

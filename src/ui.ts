@@ -106,6 +106,31 @@ export function showModal(options: {
   dialog.querySelector<HTMLButtonElement>('button')?.focus();
 }
 
+let openToast: HTMLElement | null = null;
+
+/** Kurzer Hinweis, der sich nicht in den Weg stellt und von selbst verschwindet. */
+export function showToast(message: string, durationMs = 6000): void {
+  openToast?.remove();
+  const toast = h(
+    'div',
+    { class: 'toast', role: 'status' },
+    h('span', {}, message),
+    h(
+      'button',
+      {
+        class: 'toast-close',
+        type: 'button',
+        'aria-label': 'Hinweis schließen',
+        onclick: () => toast.remove(),
+      },
+      '✕',
+    ),
+  );
+  document.body.append(toast);
+  openToast = toast;
+  setTimeout(() => toast.remove(), durationMs);
+}
+
 export function confirmDialog(
   title: string,
   message: string,

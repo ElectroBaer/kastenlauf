@@ -33,6 +33,20 @@ export interface StoryPart {
   text: string;
 }
 
+export interface AlertConfig {
+  /** Kurzer Ton bei Stationsankunft. */
+  sound: boolean;
+  /** Vibration bei Stationsankunft (nur Android). */
+  vibrate: boolean;
+  /** Systembenachrichtigung bei Stationsankunft. */
+  notification: boolean;
+  /**
+   * Minuten, nach denen im Hintergrund eine Erinnerung kommt, mal wieder auf
+   * die Karte zu schauen. 0 schaltet die Erinnerung ab.
+   */
+  reminderAfterMinutes: number;
+}
+
 export interface Config {
   version: number;
   title: string;
@@ -41,6 +55,7 @@ export interface Config {
   route: { start: RoutePoint; finish: RoutePoint };
   /** Abstand in Metern, ab dem eine Station ausgelöst wird. */
   triggerRadiusMeters: number;
+  alerts: AlertConfig;
   intro: StoryPart;
   outro: StoryPart;
   stations: Station[];

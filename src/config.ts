@@ -38,6 +38,20 @@ function validate(raw: unknown): Config {
   if (typeof config.triggerRadiusMeters !== 'number' || config.triggerRadiusMeters <= 0) {
     fail('triggerRadiusMeters muss eine positive Zahl sein');
   }
+  // Der alerts-Block ist optional — ältere Configs bleiben lauffähig.
+  config.alerts = {
+    sound: config.alerts?.sound ?? true,
+    vibrate: config.alerts?.vibrate ?? true,
+    notification: config.alerts?.notification ?? true,
+    reminderAfterMinutes: config.alerts?.reminderAfterMinutes ?? 10,
+  };
+  if (
+    typeof config.alerts.reminderAfterMinutes !== 'number' ||
+    config.alerts.reminderAfterMinutes < 0
+  ) {
+    fail('alerts.reminderAfterMinutes muss 0 oder größer sein');
+  }
+
   if (!config.intro?.text) fail('intro.text fehlt');
   if (!config.outro?.text) fail('outro.text fehlt');
   if (!Array.isArray(config.stations) || config.stations.length === 0) {
