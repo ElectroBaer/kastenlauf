@@ -85,4 +85,8 @@ export interface GameState {
   stationIndex: number;
   /** IDs bereits abgeschlossener Stationen. */
   completed: number[];
+  /** Ob nach Benachrichtigungen schon gefragt wurde — damit es nicht nervt. */
+  notificationsAsked: boolean;
+  /** Ob der iOS-Installationshinweis schon gezeigt wurde. */
+  installHintShown: boolean;
 }

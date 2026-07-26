@@ -85,9 +85,19 @@ Was auf welchem Gerät ankommt:
 | iPhone (Safari, normaler Tab) | ✅ | ❌ | ❌ |
 | iPhone (zum Home-Bildschirm hinzugefügt) | ✅ | ❌ | ✅ |
 
-Vibration kennt iOS Safari nicht, daran lässt sich nichts ändern. Benachrichtigungen
-zeigt iOS **nur** für Seiten, die auf dem Home-Bildschirm liegen — siehe
+Vibration kennt iOS Safari nicht, daran lässt sich nichts ändern.
+
+**Auf dem iPhone gibt es Benachrichtigungen ausschließlich in der installierten
+Web-App.** In einem normalen Safari-Tab existiert die Notification-API gar nicht —
+die App fragt dort also nicht nach der Berechtigung, sondern erklärt im Menü unter
+*Benachrichtigungen einschalten*, wie sich das ändern lässt. Siehe
 [Auf dem Handy installieren](#auf-dem-handy-installieren).
+
+Und noch eine iOS-Eigenheit, die im Code steckt: Safari kennt den
+`new Notification(...)`-Konstruktor nicht, sondern zeigt Benachrichtigungen nur über
+`ServiceWorkerRegistration.showNotification()`. Genau dafür — und für nichts anderes —
+gibt es `public/sw.js`. Der Service Worker **cacht bewusst nichts**, damit eine
+kurzfristige Änderung an Story oder Koordinaten am Spieltag garantiert ankommt.
 
 ### Passwort ändern
 
@@ -176,8 +186,13 @@ Die App bringt ein Web-App-Manifest mit und lässt sich auf den Home-Bildschirm 
 - **Android:** Chrome → ⋮ → *App installieren* bzw. *Zum Startbildschirm hinzufügen*.
 
 Auf dem iPhone ist das **Voraussetzung für Benachrichtigungen** — in einem normalen
-Safari-Tab gibt es die schlicht nicht. Nebenbei läuft die App dann ohne Browserleiste,
-was auf dem kleinen Display spürbar mehr Platz für die Karte lässt.
+Safari-Tab gibt es die schlicht nicht. Die App weist beim ersten Start selbst darauf
+hin; danach lässt sich die Berechtigung über **☰ → Benachrichtigungen einschalten**
+erteilen. Nebenbei läuft die App dann ohne Browserleiste, was auf dem kleinen Display
+spürbar mehr Platz für die Karte lässt.
+
+Wichtig: Nach dem Hinzufügen die App **vom Home-Bildschirm aus** starten, nicht weiter
+den Safari-Tab benutzen — sonst ändert sich nichts.
 
 Die Icons liegen als PNG in `public/`. Wer ein eigenes will, ersetzt sie einfach — oder
 passt `tools/make-icons.mjs` an und lässt sie neu erzeugen (`node tools/make-icons.mjs`).
@@ -222,6 +237,7 @@ die Stationen so, wie sie sollen.
 ```
 public/config.json    Route, Passwort-Hash, Alarm-Einstellungen, komplette Story
 public/manifest.webmanifest  Web-App-Manifest für die Installation
+public/sw.js          Service Worker — nur für Benachrichtigungen auf iOS, kein Cache
 src/main.ts           Spielablauf, Phasenwechsel, Stations-Trigger, Hintergrund-Logik
 src/geo.ts            Haversine, Stationsverteilung, watchPosition
 src/notify.ts         Ton, Vibration, Benachrichtigungen
