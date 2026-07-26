@@ -1,16 +1,27 @@
+/*
+ * Helle Palette, ausgelegt auf Ablesbarkeit bei Sonne. Die Kontrastwerte
+ * beziehen sich auf --bg und sind alle deutlich über den 4,5:1, die die WCAG
+ * für Fließtext fordert. Bewusst KEIN prefers-color-scheme-Zweig: wer sein
+ * Handy auf Dark Mode stehen hat, soll draußen trotzdem die helle Oberfläche
+ * bekommen — genau dafür ist sie da.
+ */
 :root {
-  --bg: #14100d;
-  --bg-elevated: #1f1915;
-  --bg-input: #2a221c;
-  --text: #f4ece2;
-  --text-muted: #b3a394;
-  --accent: #c98a3c;
-  --danger: #e2725b;
+  --bg: #faf7f2; /* cremeweiß statt grellweiß, blendet weniger */
+  --bg-elevated: #ffffff;
+  --bg-input: #ffffff;
+  --bg-map: #e8e0d4; /* Kachel-Platzhalter, passt zu den OSM-Farben */
+  --text: #1a1512; /* 16,6:1 */
+  --text-muted: #5c5048; /* 7,3:1 */
+  --accent: #9a5b12; /* 5,0:1 — für Text und Rahmen */
+  --accent-button: #8a4f0d; /* 6,6:1 gegen weiße Schrift */
+  --accent-map: #b26a00; /* nur Grafik: Pins, Route, Trigger-Kreis */
+  --danger: #b3261e; /* 6,1:1 */
+  --border: #d8cec1;
   --radius: 14px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 *,
@@ -29,7 +40,9 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
-  font-size: 17px;
+  /* Etwas größer als üblich — kleine Schrift ist bei Sonne das Erste, was
+     unlesbar wird. */
+  font-size: 18px;
   line-height: 1.6;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior: none;
@@ -141,13 +154,13 @@ body {
 }
 
 .btn-primary {
-  background: var(--accent);
-  color: #17110b;
+  background: var(--accent-button);
+  color: #ffffff;
 }
 
 .btn-ghost {
-  background: transparent;
-  border-color: #4a3d33;
+  background: var(--bg-elevated);
+  border-color: var(--border);
   color: var(--text);
 }
 
@@ -163,9 +176,9 @@ body {
   flex: none;
   width: 44px;
   height: 44px;
-  border: 1px solid #4a3d33;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: transparent;
+  background: var(--bg);
   color: var(--text);
   font-size: 1.2rem;
   line-height: 1;
@@ -177,13 +190,13 @@ body {
   width: 100%;
   padding: 14px 16px;
   margin-bottom: 10px;
-  border: 1px solid #4a3d33;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-input);
   color: var(--text);
   font: inherit;
   /* 16px+ verhindert das automatische Hineinzoomen auf iOS. */
-  font-size: 17px;
+  font-size: 18px;
 }
 
 .input:focus {
@@ -202,7 +215,7 @@ body {
   margin: 10px 0 0;
   padding: 12px 14px;
   border-left: 3px solid var(--accent);
-  background: var(--bg-elevated);
+  background: #f2ebde;
   font-size: 0.95rem;
 }
 
@@ -252,6 +265,7 @@ body {
   gap: 12px;
   padding: calc(var(--safe-top) + 14px) 16px 12px;
   background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
 }
 
 .map-title {
@@ -263,7 +277,7 @@ body {
 .map-canvas {
   flex: 1;
   min-height: 0;
-  background: #2a221c;
+  background: var(--bg-map);
   /* Eigener Stacking-Context: Leaflet gibt seinen Bedienelementen z-index bis
      1000, die sonst durch die darüberliegenden Story-Screens hindurchscheinen. */
   position: relative;
@@ -279,6 +293,7 @@ body {
   gap: 12px;
   padding: 12px 16px calc(var(--safe-bottom) + 12px);
   background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
 }
 
 .status-text {
@@ -293,50 +308,49 @@ body {
 .status-sub {
   margin: 2px 0 0;
   color: var(--text-muted);
-  font-size: 0.82rem;
+  font-size: 0.88rem;
 }
 
-/* Leaflet-Marker */
+/* Leaflet-Marker: kräftige Füllung, weiße Schrift, weißer Rand und dunkler
+   Schatten — so heben sie sich von hellen wie dunklen Kartenkacheln ab. */
 .pin {
   display: grid;
   place-items: center;
   width: 28px;
   height: 28px;
-  border: 2px solid #17110b;
+  border: 2px solid #ffffff;
   border-radius: 50%;
   font-family: system-ui, sans-serif;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #17110b;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 45%);
+  color: #ffffff;
+  box-shadow: 0 1px 5px rgb(0 0 0 / 45%);
 }
 
 .pin-start {
-  background: #7fb069;
+  background: #2e7d32;
 }
 
 .pin-finish {
-  background: #e2725b;
+  background: #c62828;
 }
 
 .pin-next {
-  background: var(--accent);
+  background: var(--accent-map);
   animation: pulse 1.8s ease-in-out infinite;
 }
 
 .pin-done {
-  background: #6f635a;
-  color: #d9cfc5;
-  opacity: 0.85;
+  background: #8d8378;
 }
 
 @keyframes pulse {
   0%,
   100% {
-    box-shadow: 0 2px 6px rgb(0 0 0 / 45%);
+    box-shadow: 0 1px 5px rgb(0 0 0 / 45%);
   }
   50% {
-    box-shadow: 0 0 0 8px rgb(201 138 60 / 25%);
+    box-shadow: 0 0 0 9px rgb(178 106 0 / 30%);
   }
 }
 
@@ -347,7 +361,7 @@ body {
 }
 
 .leaflet-container {
-  background: #2a221c;
+  background: var(--bg-map);
   font-family: system-ui, sans-serif;
 }
 
@@ -362,7 +376,7 @@ body {
   justify-content: center;
   padding: 16px;
   padding-bottom: calc(var(--safe-bottom) + 16px);
-  background: rgb(0 0 0 / 60%);
+  background: rgb(26 21 18 / 45%);
 }
 
 .modal {
@@ -371,7 +385,7 @@ body {
   padding: 22px 20px;
   border-radius: 20px;
   background: var(--bg-elevated);
-  box-shadow: 0 12px 40px rgb(0 0 0 / 55%);
+  box-shadow: 0 12px 40px rgb(26 21 18 / 30%);
 }
 
 .modal-title {
@@ -384,6 +398,37 @@ body {
   color: var(--text-muted);
 }
 
+/* ---------- Toast ---------- */
+
+.toast {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  top: calc(var(--safe-top) + 12px);
+  z-index: 1100;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  box-shadow: 0 6px 24px rgb(26 21 18 / 25%);
+  font-size: 0.95rem;
+}
+
+.toast-close {
+  flex: none;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
 /* ---------- Debug ---------- */
 
 .debug-panel {
@@ -393,9 +438,10 @@ body {
   bottom: calc(var(--safe-bottom) + 84px);
   z-index: 900;
   padding: 10px 12px;
-  border: 1px solid #4a3d33;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: rgb(31 25 21 / 95%);
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 2px 10px rgb(26 21 18 / 15%);
   font-family: system-ui, sans-serif;
   font-size: 0.85rem;
 }

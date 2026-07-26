@@ -18,6 +18,12 @@
     }
   },
   "triggerRadiusMeters": 40,
+  "alerts": {
+    "sound": true,
+    "vibrate": true,
+    "notification": true,
+    "reminderAfterMinutes": 10
+  },
   "intro": {
     "title": "Intro",
     "text": "\"So, Kollegen, das wär geschafft.\" Justus Jonas lehnt sich zufrieden in dem alten Bürostuhl zurück, der vor dem Computer der Zentrale steht — und der unter dem Ersten Detektiv bedenklich knarzt. Auf der durchgesessenen Couch sitzt Peter Shaw und blättert lustlos in einer Zeitschrift, während aus der Dunkelkammer das leise Plätschern von Chemikalien dringt. Bob Andrews ist mal wieder dabei, Fotos zu entwickeln.\n\n\"Was geschafft?\", ruft Bob durch die angelehnte Tür.\n\n\"Ich habe für unser Gebrauchtwarencenter einen Account bei eBay eingerichtet\", verkündet Justus nicht ohne Stolz, \"und soeben die ersten Artikel hochgeladen. Lauter Kram, den uns letzte Woche eine Kundin vorbeigebracht hat — Susan Hayes ist ihr Name. Sie hatte den Dachboden ihrer verstorbenen Mutter Clara ausgemistet.\"\n\nPeter lässt die Zeitschrift sinken. \"eBay? Was ist denn das schon wieder?\"\n\n\"Ach, Peter, du lebst ja wieder völlig hinterm Mond!\", tönt es aus der Dunkelkammer. \"Das ist eine Online —\"\n\nVom Schrank herab krächzt Blacky ohrenbetäubend.\n\n\"Blacky, jetzt halt doch mal den Schnabel!\", zetert Peter. \"Man versteht ja kein Wort!\". \"— eine Online-Verkaufsplattform ist das.\", fährt Bob fort. \"So eine Art Auktionshaus im Internet, nur dass die ganze Welt mitbieten kann.\"\n\n\"Unter anderem\", fährt Justus fort, \"war ein ziemlich alter hölzerner Bierkasten dabei. Wer weiß, vielleicht bringt der als Sammlerstück noch ein paar Dollar.\"\n\nPeter schnaubt. \"Ein alter Bierkasten. Na, da werden die Gebote nur so hageln, Just.\""

@@ -8,6 +8,11 @@ Story-Teil — anschließend geht es zurück auf die Karte. Am Ziel folgt die Au
 Kein Backend, kein Login-Server: eine statische Seite, die auf GitHub Pages liegt.
 Der Spielstand steckt im `localStorage` des Geräts und übersteht Reloads.
 
+Die Oberfläche ist bewusst hell gehalten und auf Ablesbarkeit bei Sonne ausgelegt —
+alle Textfarben liegen deutlich über den Kontrastwerten, die die WCAG fordert. Ein
+Dark Mode ist nicht vorgesehen: draußen gewinnt die helle Variante, auch wenn das
+Handy systemweit auf dunkel steht.
+
 ## Los geht's
 
 ```bash
@@ -51,6 +56,38 @@ ein; alle anderen bleiben automatisch verteilt:
 ```json
 "coords": { "lat": 48.1402, "lng": 11.5810 }
 ```
+
+### Alarm bei Stationsankunft
+
+```json
+"alerts": {
+  "sound": true,
+  "vibrate": true,
+  "notification": true,
+  "reminderAfterMinutes": 10
+}
+```
+
+Erreicht das Team eine Station, meldet sich das Handy mit einem kurzen Ton, Vibration
+und einer Benachrichtigung — praktisch, wenn es in der Hosentasche steckt. Die
+Berechtigung für Benachrichtigungen wird nach dem Intro einmal erfragt und lässt sich
+später über **☰ → Benachrichtigungen einschalten** nachholen.
+
+`reminderAfterMinutes` steuert die Erinnerung, wenn die App länger weggelegt wurde
+(`0` schaltet sie ab). Was die kann und was nicht, steht unter
+[Grenzen im Hintergrund](#grenzen-im-hintergrund).
+
+Was auf welchem Gerät ankommt:
+
+| | Ton | Vibration | Benachrichtigung |
+| --- | --- | --- | --- |
+| Android (Chrome) | ✅ | ✅ | ✅ |
+| iPhone (Safari, normaler Tab) | ✅ | ❌ | ❌ |
+| iPhone (zum Home-Bildschirm hinzugefügt) | ✅ | ❌ | ✅ |
+
+Vibration kennt iOS Safari nicht, daran lässt sich nichts ändern. Benachrichtigungen
+zeigt iOS **nur** für Seiten, die auf dem Home-Bildschirm liegen — siehe
+[Auf dem Handy installieren](#auf-dem-handy-installieren).
 
 ### Passwort ändern
 
@@ -131,26 +168,69 @@ Danach liegt die App unter `https://<user>.github.io/kastenlauf/`. Der Unterpfad
 Über **Actions → Deploy to GitHub Pages → Run workflow** lässt sich auch von einem anderen
 Branch aus deployen, etwa für eine Generalprobe vor dem Merge.
 
+## Auf dem Handy installieren
+
+Die App bringt ein Web-App-Manifest mit und lässt sich auf den Home-Bildschirm legen:
+
+- **iPhone:** Safari → Teilen-Symbol → *Zum Home-Bildschirm*.
+- **Android:** Chrome → ⋮ → *App installieren* bzw. *Zum Startbildschirm hinzufügen*.
+
+Auf dem iPhone ist das **Voraussetzung für Benachrichtigungen** — in einem normalen
+Safari-Tab gibt es die schlicht nicht. Nebenbei läuft die App dann ohne Browserleiste,
+was auf dem kleinen Display spürbar mehr Platz für die Karte lässt.
+
+Die Icons liegen als PNG in `public/`. Wer ein eigenes will, ersetzt sie einfach — oder
+passt `tools/make-icons.mjs` an und lässt sie neu erzeugen (`node tools/make-icons.mjs`).
+
+## Grenzen im Hintergrund
+
+Kurz gesagt: **Solange das Display aus ist, ortet die App nicht.** Das ist keine
+Nachlässigkeit, sondern eine harte Grenze des Web-Plattform — Service Worker haben
+gar keinen Zugriff auf die Geolocation-API, die Geofencing-API wurde nie ausgeliefert,
+und Browser frieren versteckte Seiten samt ihrer Timer nach kurzer Zeit ein. Nur native
+Apps dürfen das. Ein Backend würde daran nichts ändern.
+
+Was die App stattdessen tut:
+
+1. **Nachprüfen beim Zurückkommen** — sobald jemand das Handy wieder entsperrt und die
+   App im Vordergrund ist, wird sofort die aktuelle Position geholt. Ist das Team mit
+   dunklem Display an einer Station vorbeigelaufen, ploppt sie in genau diesem Moment
+   auf. Nichts geht verloren, es kommt nur später.
+2. **Alarm im Hintergrund, solange die Seite noch lebt** — wechselt jemand nur kurz in
+   eine andere App, läuft die Ortung meist weiter und der Alarm kommt sofort.
+3. **Erinnerung nach längerer Pause** — nach `reminderAfterMinutes` meldet sich das
+   Handy mit *"Der Fall wartet!"*. Das ist ein Bonus, kein Versprechen: ob der Browser
+   die Seite so lange am Leben lässt, entscheidet er selbst. Klappt es nicht, erscheint
+   der Hinweis beim nächsten Öffnen in der App.
+
+**Praktischer Rat für den Spieltag:** Bildschirmsperre auf dem Spiel-Handy hochsetzen
+(iOS: *Einstellungen → Anzeige & Helligkeit → Automatische Sperre → Nie*, Android:
+*Einstellungen → Display → Bildschirm-Timeout*) und die App offen lassen. Dann kommen
+die Stationen so, wie sie sollen.
+
 ## Am Spieltag
 
 - Karte und Story werden beim ersten Laden geholt; die **Kartenkacheln kommen unterwegs
-  laufend nach** und brauchen Mobilfunk. Ohne Empfang bleibt die Karte grau — Stationen
+  laufend nach** und brauchen Mobilfunk. Ohne Empfang bleibt die Karte leer — Stationen
   lösen aber trotzdem aus, weil GPS ohne Netz funktioniert.
 - Der Spielstand hängt an Gerät und Browser. Ein Team spielt auf **einem** Telefon; im
   privaten Modus geht der Fortschritt beim Schließen verloren.
-- Akku: Dauerhaftes GPS zieht ordentlich. Powerbank einpacken.
+- Akku: Dauerhaftes GPS bei angeschaltetem Display zieht ordentlich. Powerbank einpacken.
 
 ## Aufbau
 
 ```
-public/config.json    Route, Passwort-Hash, komplette Story
-src/main.ts           Spielablauf, Phasenwechsel, Stations-Trigger
+public/config.json    Route, Passwort-Hash, Alarm-Einstellungen, komplette Story
+public/manifest.webmanifest  Web-App-Manifest für die Installation
+src/main.ts           Spielablauf, Phasenwechsel, Stations-Trigger, Hintergrund-Logik
 src/geo.ts            Haversine, Stationsverteilung, watchPosition
+src/notify.ts         Ton, Vibration, Benachrichtigungen
 src/state.ts          Spielstand im localStorage
 src/config.ts         Laden und Prüfen der Config
 src/auth.ts           SHA-256-Passwortprüfung
 src/screens/          Login, Karte, Story, Aufgabe
 src/debug.ts          Positionssimulator (?debug=1)
 tools/hash-password.mjs    Passwort-Hash erzeugen
+tools/make-icons.mjs       App-Icons erzeugen
 tools/story-to-config.mjs  story.md → config.json (einmalig)
 ```
