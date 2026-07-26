@@ -12,6 +12,8 @@ function initialState(): GameState {
     completed: [],
     notificationsAsked: false,
     installHintShown: false,
+    wakeLockEnabled: false,
+    authFingerprint: '',
   };
 }
 
@@ -44,8 +46,16 @@ export class GameStore {
   reset(): void {
     // Nur der Spielfortschritt geht zurück. Login und die einmal beantworteten
     // Gerätefragen sind keine Story und sollen nicht erneut aufpoppen.
-    const { unlocked, notificationsAsked, installHintShown } = this.state;
-    this.state = { ...initialState(), unlocked, notificationsAsked, installHintShown };
+    const { unlocked, notificationsAsked, installHintShown, wakeLockEnabled, authFingerprint } =
+      this.state;
+    this.state = {
+      ...initialState(),
+      unlocked,
+      notificationsAsked,
+      installHintShown,
+      wakeLockEnabled,
+      authFingerprint,
+    };
     this.write();
   }
 
@@ -73,6 +83,8 @@ export class GameStore {
         completed: Array.isArray(parsed.completed) ? parsed.completed : [],
         notificationsAsked: parsed.notificationsAsked === true,
         installHintShown: parsed.installHintShown === true,
+        wakeLockEnabled: parsed.wakeLockEnabled === true,
+        authFingerprint: typeof parsed.authFingerprint === 'string' ? parsed.authFingerprint : '',
       };
     } catch {
       // Privater Modus oder beschädigter Eintrag: lieber frisch anfangen.

@@ -386,6 +386,11 @@ body {
   border-radius: 20px;
   background: var(--bg-elevated);
   box-shadow: 0 12px 40px rgb(26 21 18 / 30%);
+  /* Das Menü hat inzwischen sechs Einträge — auf kleinen Displays muss der
+     Dialog scrollen können, statt unten aus dem Bild zu laufen. */
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal-title {
