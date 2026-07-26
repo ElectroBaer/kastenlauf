@@ -10,7 +10,7 @@ import { createStoryScreen } from './screens/story';
 import { createTaskScreen } from './screens/task';
 import { GameStore } from './state';
 import type { Config, LatLng, PlacedStation } from './types';
-import { confirmDialog, h, showModal, showToast } from './ui';
+import { confirmDialog, h, showModal, showToast, type ModalAction } from './ui';
 
 class Game {
   private readonly stations: PlacedStation[];
@@ -83,6 +83,7 @@ class Game {
     this.mapScreen.refreshSize();
     this.tracker.start();
     document.addEventListener('visibilitychange', () => this.onVisibilityChange());
+    void this.alerter.registerServiceWorker(import.meta.env.BASE_URL);
     this.render();
   }
 
@@ -120,7 +121,7 @@ class Game {
 
   private startReminderTimer(): void {
     const after = this.config.alerts.reminderAfterMinutes;
-    if (after <= 0 || this.store.current.phase === 'outro' || !this.alerter.notificationsGranted) {
+    if (after <= 0 || this.store.current.phase === 'outro' || !this.alerter.granted) {
       return;
     }
     this.stopReminderTimer();
@@ -133,7 +134,7 @@ class Game {
         return;
       }
       if (Date.now() >= dueAt) {
-        this.alerter.notify(
+        void this.alerter.notify(
           'Der Fall wartet!',
           'Schaut mal wieder auf die Karte — die nächste Station will gefunden werden.',
         );
@@ -161,6 +162,9 @@ class Game {
       // Nach einer Station kann das Team schon im Radius der nächsten stehen.
       const fix = this.tracker.lastFix;
       if (fix) this.onPosition(fix);
+      // Erst nach der Stationsprüfung: ein Stations-Popup hat Vorrang und darf
+      // nicht vom Benachrichtigungs-Angebot überschrieben werden.
+      this.maybeOfferNotifications();
       return;
     }
 
@@ -179,10 +183,7 @@ class Game {
           title: this.config.intro.title,
           text: this.config.intro.text,
           actionLabel: 'Fall übernehmen',
-          onContinue: () => {
-            this.goTo('map');
-            this.offerNotifications();
-          },
+          onContinue: () => this.goTo('map'),
         });
 
       case 'storyBefore':
@@ -308,51 +309,117 @@ class Game {
   }
 
   /**
-   * Fragt die Benachrichtigungs-Berechtigung mit Kontext ab, statt direkt beim
-   * Laden: ohne Erklärung tippen die meisten auf "Blockieren", und viele
-   * Browser lehnen die Abfrage ohne vorherige Nutzergeste ohnehin ab.
+   * Bietet Benachrichtigungen einmalig an, sobald das Team auf der Karte steht.
+   * Bewusst nicht beim Laden: ohne Erklärung tippen die meisten auf
+   * "Blockieren", und viele Browser lehnen die Abfrage ohne vorherige
+   * Nutzergeste ohnehin ab. Und bewusst nicht mehr nur direkt nach dem Intro —
+   * wer den Spielstand schon weiter hat, wäre sonst nie gefragt worden.
    */
-  private offerNotifications(): void {
-    if (!this.alerter.notificationsAvailable || this.alerter.notificationsDecided) return;
+  private maybeOfferNotifications(): void {
+    if (this.triggerPending) return;
+    const state = this.store.current;
+
+    // Auf dem iPhone im Safari-Tab gibt es die Benachrichtigungs-API gar nicht.
+    // Statt stumm zu bleiben, sagen wir, woran es liegt.
+    if (this.alerter.state === 'needsInstall') {
+      if (state.installHintShown) return;
+      this.store.update({ installHintShown: true });
+      showToast(
+        'Tipp fürs iPhone: Legt die App über „Teilen → Zum Home-Bildschirm“ ab. ' +
+          'Nur dann kann sie euch an einer Station benachrichtigen — der Ton kommt aber so oder so.',
+        12000,
+      );
+      return;
+    }
+
+    if (this.alerter.state !== 'default' || state.notificationsAsked) return;
+    this.store.update({ notificationsAsked: true });
     showModal({
       title: 'Sollen wir euch Bescheid geben?',
       message:
         'Dann meldet sich das Handy mit Ton und einer Benachrichtigung, sobald ihr eine Station erreicht — praktisch, wenn es in der Tasche steckt.',
       dismissible: true,
       actions: [
-        { label: 'Ja, gerne', onSelect: () => void this.alerter.requestNotifications() },
+        { label: 'Ja, gerne', onSelect: () => void this.alerter.requestPermission() },
         { label: 'Später', variant: 'ghost', onSelect: () => {} },
       ],
     });
   }
 
+  /**
+   * Menüeintrag zu Benachrichtigungen. Erklärt jeden Zustand, statt sich
+   * kommentarlos auszublenden — genau daran ist die iPhone-Abfrage vorher
+   * gescheitert.
+   */
+  private notificationMenuAction(): ModalAction | null {
+    switch (this.alerter.state) {
+      case 'granted':
+      case 'off':
+        return null;
+
+      case 'needsInstall':
+        return {
+          label: 'Benachrichtigungen einschalten',
+          variant: 'ghost',
+          onSelect: () =>
+            showModal({
+              title: 'Auf dem iPhone erst installieren',
+              message:
+                'Safari zeigt Benachrichtigungen nur für Web-Apps auf dem Home-Bildschirm. ' +
+                'Tippt unten auf das Teilen-Symbol, dann auf „Zum Home-Bildschirm“, und startet die App von dort. ' +
+                'Danach lässt sich die Berechtigung hier im Menü erteilen. Der Ton an den Stationen funktioniert auch ohne das.',
+              dismissible: true,
+              actions: [{ label: 'Verstanden', onSelect: () => {} }],
+            }),
+        };
+
+      case 'unsupported':
+        return {
+          label: 'Benachrichtigungen einschalten',
+          variant: 'ghost',
+          onSelect: () =>
+            showToast('Dieser Browser kann keine Benachrichtigungen. Ton und Vibration kommen trotzdem.'),
+        };
+
+      case 'denied':
+        return {
+          label: 'Benachrichtigungen einschalten',
+          variant: 'ghost',
+          onSelect: () =>
+            showToast(
+              'Benachrichtigungen sind für diese Seite blockiert. Das lässt sich nur in den Browser-Einstellungen wieder ändern.',
+              9000,
+            ),
+        };
+
+      case 'default':
+        return {
+          label: 'Benachrichtigungen einschalten',
+          variant: 'ghost',
+          onSelect: async () => {
+            this.store.update({ notificationsAsked: true });
+            const granted = await this.alerter.requestPermission();
+            showToast(
+              granted
+                ? 'Alles klar — ihr bekommt ab jetzt eine Meldung an jeder Station.'
+                : 'Bleibt aus. Über das Menü könnt ihr es jederzeit nochmal versuchen.',
+            );
+          },
+        };
+    }
+  }
+
   private openMenu(): void {
     const state = this.store.current;
     const done = state.completed.length;
-    const canOfferNotifications =
-      this.alerter.notificationsAvailable && !this.alerter.notificationsGranted;
+    const notificationAction = this.notificationMenuAction();
 
     showModal({
       title: 'Menü',
       message: `${done} von ${this.stations.length} Stationen erledigt.`,
       dismissible: true,
       actions: [
-        ...(canOfferNotifications
-          ? [
-              {
-                label: 'Benachrichtigungen einschalten',
-                variant: 'ghost' as const,
-                onSelect: async () => {
-                  const granted = await this.alerter.requestNotifications();
-                  showToast(
-                    granted
-                      ? 'Alles klar — ihr bekommt ab jetzt eine Meldung an jeder Station.'
-                      : 'Benachrichtigungen sind blockiert. Das lässt sich in den Browser-Einstellungen für diese Seite ändern.',
-                  );
-                },
-              },
-            ]
-          : []),
+        ...(notificationAction ? [notificationAction] : []),
         {
           label: 'Station manuell starten',
           variant: 'ghost',

@@ -10,6 +10,8 @@ function initialState(): GameState {
     phase: 'intro',
     stationIndex: 0,
     completed: [],
+    notificationsAsked: false,
+    installHintShown: false,
   };
 }
 
@@ -40,8 +42,10 @@ export class GameStore {
   }
 
   reset(): void {
-    const unlocked = this.state.unlocked;
-    this.state = { ...initialState(), unlocked };
+    // Nur der Spielfortschritt geht zurück. Login und die einmal beantworteten
+    // Gerätefragen sind keine Story und sollen nicht erneut aufpoppen.
+    const { unlocked, notificationsAsked, installHintShown } = this.state;
+    this.state = { ...initialState(), unlocked, notificationsAsked, installHintShown };
     this.write();
   }
 
@@ -59,12 +63,16 @@ export class GameStore {
           ? Math.min(Math.max(parsed.stationIndex, 0), this.stationCount)
           : 0;
 
+      // Fehlende Felder werden ergänzt, statt STATE_VERSION zu erhöhen — ein
+      // Versionssprung würde laufende Spielstände löschen.
       return {
         stateVersion: STATE_VERSION,
         unlocked: parsed.unlocked === true,
         phase: parsed.phase ?? 'intro',
         stationIndex,
         completed: Array.isArray(parsed.completed) ? parsed.completed : [],
+        notificationsAsked: parsed.notificationsAsked === true,
+        installHintShown: parsed.installHintShown === true,
       };
     } catch {
       // Privater Modus oder beschädigter Eintrag: lieber frisch anfangen.

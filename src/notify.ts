@@ -1,18 +1,65 @@
 import type { AlertConfig } from './types';
 
 /**
+ * In welchem Zustand die Benachrichtigungen auf diesem Gerät sind. Wichtig ist
+ * die Unterscheidung zwischen "kann das Gerät nicht" und "muss erst installiert
+ * werden" — sonst steht die Oberfläche stumm da und niemand weiß, warum nichts
+ * passiert.
+ */
+export type NotificationState =
+  | 'off' // in der Config abgeschaltet
+  | 'unsupported' // Browser kann keine Benachrichtigungen
+  | 'needsInstall' // iOS: erst als Web-App auf dem Home-Bildschirm möglich
+  | 'default' // noch nicht gefragt
+  | 'granted'
+  | 'denied';
+
+/** Läuft die Seite als installierte Web-App statt im Browser-Tab? */
+function isStandalone(): boolean {
+  return (
+    window.matchMedia?.('(display-mode: standalone)').matches ||
+    // Safari-eigene Variante, die es nur auf iOS gibt.
+    (navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
+function isIos(): boolean {
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    // iPadOS meldet sich seit einigen Versionen als Mac mit Touchscreen.
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
+
+/**
  * Bündelt Ton, Vibration und Benachrichtigung zu einem Alarm. Jeder Kanal darf
  * einzeln fehlschlagen — kein Gerät kann alle drei:
  *
  * - Ton läuft überall, braucht aber eine vorherige Nutzergeste (Autoplay-Sperre).
  * - `navigator.vibrate` gibt es auf Android, iOS Safari kennt die API nicht.
- * - Benachrichtigungen zeigt iOS nur für Seiten, die über "Zum Home-Bildschirm"
- *   installiert wurden; in einem normalen Safari-Tab fehlt `window.Notification`.
+ * - Benachrichtigungen zeigt iOS nur in Web-Apps, die auf dem Home-Bildschirm
+ *   liegen — und dort ausschließlich über den Service Worker.
  */
 export class Alerter {
   private audio: AudioContext | null = null;
+  private registration: ServiceWorkerRegistration | null = null;
 
   constructor(private readonly config: AlertConfig) {}
+
+  /**
+   * Registriert den Service Worker. Der wird auf iOS gebraucht, um überhaupt
+   * eine Benachrichtigung anzeigen zu können; auf anderen Systemen ist er ein
+   * netter Bonus (die Benachrichtigung überlebt dort das Schließen des Tabs).
+   */
+  async registerServiceWorker(scope: string): Promise<void> {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+      this.registration = await navigator.serviceWorker.register(`${scope}sw.js`, { scope });
+    } catch {
+      // Ohne Service Worker bleibt der direkte Weg über den Konstruktor.
+      this.registration = null;
+    }
+  }
 
   /**
    * Muss aus einem Klick-Handler heraus laufen: Browser erlauben Audio erst
@@ -21,7 +68,9 @@ export class Alerter {
   unlockAudio(): void {
     if (!this.config.sound || this.audio) return;
     try {
-      const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const Ctor =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctor) return;
       this.audio = new Ctor();
       void this.audio.resume();
@@ -30,21 +79,23 @@ export class Alerter {
     }
   }
 
-  get notificationsAvailable(): boolean {
-    return this.config.notification && 'Notification' in window;
+  get state(): NotificationState {
+    if (!this.config.notification) return 'off';
+    if (!('Notification' in window)) {
+      // Auf iOS fehlt Notification im normalen Safari-Tab komplett — dort ist
+      // das kein "geht nicht", sondern ein "erst installieren".
+      return isIos() && !isStandalone() ? 'needsInstall' : 'unsupported';
+    }
+    return Notification.permission as 'default' | 'granted' | 'denied';
   }
 
-  get notificationsGranted(): boolean {
-    return this.notificationsAvailable && Notification.permission === 'granted';
-  }
-
-  get notificationsDecided(): boolean {
-    return !this.notificationsAvailable || Notification.permission !== 'default';
+  get granted(): boolean {
+    return this.state === 'granted';
   }
 
   /** Muss aus einer Nutzergeste heraus aufgerufen werden. */
-  async requestNotifications(): Promise<boolean> {
-    if (!this.notificationsAvailable) return false;
+  async requestPermission(): Promise<boolean> {
+    if (this.state !== 'default') return this.granted;
     try {
       return (await Notification.requestPermission()) === 'granted';
     } catch {
@@ -56,27 +107,45 @@ export class Alerter {
   fire(title: string, body: string): void {
     this.playChime();
     this.vibrate([200, 100, 200, 100, 300]);
-    this.notify(title, body);
+    void this.notify(title, body);
   }
 
   /** Nur Benachrichtigung, ohne Ton und Vibration (für die Erinnerung). */
-  notify(title: string, body: string): void {
-    if (!this.notificationsGranted) return;
+  async notify(title: string, body: string): Promise<void> {
+    if (!this.granted) return;
+    const options: NotificationOptions = {
+      body,
+      icon: `${import.meta.env.BASE_URL}icon-192.png`,
+      badge: `${import.meta.env.BASE_URL}icon-192.png`,
+      tag: 'kastenlauf',
+      requireInteraction: true,
+    };
+
+    // Erst der Service Worker: iOS kennt den Konstruktor unten gar nicht und
+    // wirft dort einen TypeError.
+    const registration = this.registration ?? (await this.readyRegistration());
+    if (registration) {
+      try {
+        await registration.showNotification(title, options);
+        return;
+      } catch {
+        // Fällt unten auf den direkten Weg zurück.
+      }
+    }
+
     try {
-      const notification = new Notification(title, {
-        body,
-        icon: `${import.meta.env.BASE_URL}icon-192.png`,
-        badge: `${import.meta.env.BASE_URL}icon-192.png`,
-        tag: 'kastenlauf',
-        requireInteraction: true,
-      });
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
+      new Notification(title, options);
     } catch {
-      // Manche Browser werfen, wenn Notifications nur über einen Service
-      // Worker erlaubt sind. Ton und Vibration reichen dann auch.
+      // Ton und Vibration sind dann die einzige Rückmeldung.
+    }
+  }
+
+  private async readyRegistration(): Promise<ServiceWorkerRegistration | null> {
+    if (!('serviceWorker' in navigator)) return null;
+    try {
+      return await navigator.serviceWorker.ready;
+    } catch {
+      return null;
     }
   }
 
