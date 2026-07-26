@@ -70,6 +70,16 @@ function validate(raw: unknown): Config {
       fail(`${where}.task.answers darf bei type "code" nicht leer sein`);
     }
     if (station.coords) assertLatLng(station.coords, `${where}.coords`);
+    if (station.remainingMeters !== undefined && station.remainingMeters !== null) {
+      if (typeof station.remainingMeters !== 'number' || station.remainingMeters <= 0) {
+        fail(`${where}.remainingMeters muss eine positive Zahl sein`);
+      }
+      if (station.coords) {
+        fail(
+          `${where}: coords und remainingMeters schließen sich aus — entweder fester Punkt oder Ring um das Ziel`,
+        );
+      }
+    }
   });
 
   const ids = config.stations.map((s) => s.id);

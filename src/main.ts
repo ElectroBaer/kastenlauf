@@ -2,19 +2,26 @@ import './styles.css';
 
 import { loadConfig } from './config';
 import { createDebugPanel, isDebugEnabled } from './debug';
-import { distanceMeters, placeStations, PositionTracker, type PositionFix } from './geo';
+import {
+  buildTriggers,
+  distanceMeters,
+  dueStationCount,
+  PositionTracker,
+  type PositionFix,
+  type StationTrigger,
+} from './geo';
 import { Alerter } from './notify';
 import { createLoginScreen } from './screens/login';
 import { MapScreen } from './screens/map';
 import { createStoryScreen } from './screens/story';
 import { createTaskScreen } from './screens/task';
 import { GameStore } from './state';
-import type { Config, LatLng, PlacedStation } from './types';
+import type { Config, LatLng } from './types';
 import { confirmDialog, h, showModal, showToast, type ModalAction } from './ui';
 import { WakeLock } from './wakelock';
 
 class Game {
-  private readonly stations: PlacedStation[];
+  private readonly triggers: StationTrigger[];
   private readonly store: GameStore;
   private readonly mapScreen: MapScreen;
   private readonly overlay: HTMLElement;
@@ -37,12 +44,12 @@ class Game {
     private readonly root: HTMLElement,
     private readonly config: Config,
   ) {
-    this.stations = placeStations(config);
-    this.store = new GameStore(this.stations.length);
+    this.triggers = buildTriggers(config);
+    this.store = new GameStore(this.triggers.length);
     this.overlay = h('div', { class: 'overlay', hidden: true });
     this.mapScreen = new MapScreen({
       config,
-      stations: this.stations,
+      triggers: this.triggers,
       onOpenMenu: () => this.openMenu(),
     });
     this.tracker = new PositionTracker(
@@ -193,7 +200,7 @@ class Game {
 
   private render(): void {
     const state = this.store.current;
-    this.mapScreen.render(state.stationIndex, state.completed);
+    this.mapScreen.render(state.stationIndex);
 
     if (state.phase === 'map') {
       this.overlay.hidden = true;
@@ -214,7 +221,7 @@ class Game {
   }
 
   private buildOverlayScreen(phase: string, stationIndex: number): HTMLElement {
-    const station = this.stations[stationIndex];
+    const station = this.triggers[stationIndex]?.station;
 
     switch (phase) {
       case 'intro':
@@ -253,7 +260,7 @@ class Game {
           title: 'Geschafft!',
           text: station.storyAfter,
           actionLabel:
-            stationIndex + 1 < this.stations.length ? 'Weiter zur Karte' : 'Auf zum Ziel',
+            stationIndex + 1 < this.triggers.length ? 'Weiter zur Karte' : 'Auf zum Ziel',
           onContinue: () => {
             this.store.update({ stationIndex: stationIndex + 1 });
             this.goTo('map');
@@ -294,11 +301,32 @@ class Game {
     const state = this.store.current;
     if (state.phase !== 'map' || this.triggerPending) return;
 
-    const station = this.stations[state.stationIndex];
-    const target = station ? station.position : this.config.route.finish;
-    if (distanceMeters(fix.coords, target) <= this.config.triggerRadiusMeters) {
+    if (state.stationIndex < this.dueCount(fix.coords)) {
+      this.triggerNext();
+      return;
+    }
+
+    // Alle Stationen durch: Jetzt zählt nur noch der Zielpunkt selbst.
+    if (
+      state.stationIndex >= this.triggers.length &&
+      distanceMeters(fix.coords, this.config.route.finish) <= this.config.triggerRadiusMeters
+    ) {
       this.triggerNext();
     }
+  }
+
+  /**
+   * Wie viele Stationen an dieser Position fällig sind. Mehr als eine ist der
+   * Normalfall, wenn die App eine Weile in der Tasche war — sie werden dann
+   * nacheinander abgearbeitet, weil `render()` nach jeder Station erneut prüft.
+   */
+  private dueCount(position: LatLng): number {
+    return dueStationCount(
+      this.triggers,
+      position,
+      distanceMeters(position, this.config.route.finish),
+      this.config.triggerRadiusMeters,
+    );
   }
 
   /** Öffnet die nächste offene Station bzw. am Ende die Auflösung. */
@@ -307,7 +335,7 @@ class Game {
     this.triggerPending = true;
 
     const state = this.store.current;
-    const station = this.stations[state.stationIndex];
+    const station = this.triggers[state.stationIndex]?.station;
 
     if (!station) {
       this.alerter.fire('Ihr seid am Ziel!', 'Zeit für die Auflösung.');
@@ -328,13 +356,24 @@ class Game {
       return;
     }
 
+    // Waren mehrere Stationen zugleich fällig, sagen wir das dazu — sonst
+    // wundert sich das Team, warum sich die Geschichten plötzlich stapeln.
+    const fix = this.tracker.lastFix;
+    const pending = fix ? this.dueCount(fix.coords) - state.stationIndex - 1 : 0;
+    const backlog =
+      pending > 0
+        ? ` Ihr habt einiges aufzuholen — danach warten noch ${pending} weitere ${
+            pending === 1 ? 'Station' : 'Stationen'
+          }.`
+        : '';
+
     this.alerter.fire(
       `${station.title} erreicht!`,
       'Ihr seid da — die Geschichte geht weiter.',
     );
     showModal({
       title: `${station.title} erreicht!`,
-      message: 'Ihr seid da. Bereit für den nächsten Teil der Geschichte?',
+      message: `Ihr seid da. Bereit für den nächsten Teil der Geschichte?${backlog}`,
       actions: [
         {
           label: 'Weiterlesen',
@@ -485,7 +524,7 @@ class Game {
 
     showModal({
       title: 'Menü',
-      message: `${done} von ${this.stations.length} Stationen erledigt.`,
+      message: `${done} von ${this.triggers.length} Stationen erledigt.`,
       dismissible: true,
       actions: [
         // Erst die Einstellungen, dann Aktionen, zuletzt das Heikle.

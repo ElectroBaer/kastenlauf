@@ -122,6 +122,9 @@ const stations = sections
         hint: null,
       },
       storyAfter: normalizeText(blocks.slice(taskIndex + 1).flatMap((b) => b.lines)),
+      // Ohne Angabe verteilt die App die Stationen gleichmäßig als Ringe um das
+      // Ziel. Siehe README, Abschnitt "Wann eine Station auslöst".
+      remainingMeters: null,
       coords: null,
     };
   })
