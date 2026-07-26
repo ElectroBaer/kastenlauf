@@ -1,19 +1,19 @@
 {
   "version": 1,
   "title": "Bierkastenlauf",
-  "subtitle": "Ein Fall für die drei ???",
+  "subtitle": "Die drei ??? und der mysteriöse Bierkasten",
   "auth": {
     "passwordHash": "04937aee35614cd565c7fc9912d03cde6d4d08e4a88674e762b7d020d96f071e"
   },
   "route": {
     "start": {
-      "lat": 48.1371,
-      "lng": 11.5754,
+      "lat": 48.9821840,
+      "lng": 8.3794486,
       "label": "Start"
     },
     "finish": {
-      "lat": 48.15,
-      "lng": 11.6,
+      "lat": 48.9662862,
+      "lng": 8.3303283,
       "label": "Ziel"
     }
   },
@@ -39,7 +39,7 @@
         ],
         "hint": null
       },
-      "storyAfter": "\"Ich glaub, ich hab da was!\" Bobs Finger ertasten auf der Unterseite des Bierkastens eine kleine Messinglasche. Ein leises *Klack* ertönt. Das Bodenbrett lässt sich anheben — und darunter, in einem flachen Hohlraum, liegt ein vergilbter Umschlag.\n\n\"Ein doppelter Boden\", flüstert Peter. \"Der Kasten hat einen doppelten Boden.\"\n\nJustus nimmt den Umschlag heraus. \"Das, Kollegen, ist wohl der Grund, warum jemand ein Vermögen für den Bierkasten bietet.\" Vorsichtig zieht Justus den Inhalt aus dem Umschlag — ein Brief:\n\n*Clara, mein Herz,*\n\n*es tut mir unendlich Leid, aber ich muss verschwinden. Es ist besser so, für dich und unseren kleinen Sonnenschein.*\n\n*Dort, wo alles begann, findest Du, was ihr braucht. Schau unter dem doppelten Boden. Der Brief zeigt Dir, wo.*\n\n*Du hast mein Leben zum schönsten Traum gemacht, den ich je träumen durfte.*\n\n*In Liebe, immer,\nE.*",
+      "storyAfter": "\"Ich glaub, ich hab da was!\" Bobs Finger ertasten auf der Unterseite des Bierkastens eine kleine Messinglasche. Ein leises *Klack* ertönt. Das Bodenbrett lässt sich anheben — und darunter, in einem flachen Hohlraum, liegt ein vergilbter Umschlag.\n\n\"Ein doppelter Boden\", flüstert Peter. \"Der Kasten hat einen doppelten Boden.\"\n\nJustus nimmt den Umschlag heraus. \"Das, Kollegen, ist wohl der Grund, warum jemand ein Vermögen für den Bierkasten bietet.\" Vorsichtig zieht Justus den Inhalt aus dem Umschlag — ein Brief:\n\n*Clara, mein Herz,*\n\n*es tut mir unendlich Leid, aber ich muss verschwinden. Es ist besser so, für dich und unseren kleinen Sonnenschein.*\n\n*Dort, wo alles begann, findest Du, was ihr braucht. Schau unter dem doppelten Boden. Der Brief zeigt Dir, wo.*\n\n*Du hast mein Leben zum schönsten Traum gemacht, den ich je träumen durfte.*\n\n*In Liebe, immer,*\n*E.*",
       "coords": null
     },
     {
@@ -48,12 +48,11 @@
       "storyBefore": "Am nächsten Tag treffen sich die drei ??? nach dem Frühstück am Schrottplatz. Beim Betreten der Zentrale blieben sie jedoch wie angewurzelt stehen. Die Schublade des Schreibtischs steht offen, Papiere liegen verstreut auf dem Boden, und der Aktenschrank ist durchwühlt.\n\n\"Der Brief\", stößt Justus hervor. Er stürzt zum Tisch und wühlt in den Papieren. \"Der Brief ist weg!\"\n\nJustus’ Miene verfinstert sich. \"Wer immer hier war, wollte sich garantiert den Bierkasten unter den Nagel reißen. Dann hat er oder sie den offenen doppelten Boden gesehen und sich kurzerhand nur den Inhalt geschnappt.\" Er ballt die Faust. \"Zum Glück war der Brief nur so kurz. Dank meines fotografischen Gedächtnisses kann ich ihn also auch so wortgetreu wiedergeben.\"\n\n\"Glück im Unglück\", knurrt Peter. \"Aber wer hat den Brief jetzt? Wir haben doch keine Ahnung, wer hier eingebrochen sein könnte!\"\n\n\"Vielleicht doch.\" Bob ist in die Hocke gegangen und stochert unter dem Schreibtisch. Als er sich aufrichtet, hält er ein silbernes Feuerzeug in der Hand, teuer, mit polierter Oberfläche. \"Das gehört keinem von uns. Muss ihm oder ihr beim Einbruch aus der Tasche gefallen sein.\"\n\nJustus nimmt das Feuerzeug, dreht es ins Licht. In das Metall sind drei feine Initialen eingraviert:\n\nE. S. N.",
       "task": {
         "type": "code",
-        "prompt": "Zu wem gehören die drei initialen E.S.N.? Wer ist in die Zentrale eingebrochen und hat den Brief gestohlen?",
+        "prompt": "Zu wem gehören die drei Initialen E.S.N.? Wer ist in die Zentrale eingebrochen und hat den Brief gestohlen?",
         "answers": [
           "E. Skinner Norris",
           "Skinner Norris",
           "Skinny Norris",
-          "E.S. Norris",
           "Skinny"
         ],
         "hint": null
@@ -122,11 +121,11 @@
       "storyBefore": "\"Jetzt sag schon, Just!\", drängt Peter, kaum dass Bobs Käfer angesprungen ist. \"Wo fahren wir hin?\"\n\n\"Überlegt doch mal. Wir haben nach dem Anfang ihrer Liebe gesucht und nach dem Anfang von Eleanors Brauerei. Es gibt aber noch einen weiteren Ort, der für die beiden einen Anfang markiert. Der Ort, der ihnen Susan geschenkt hat.\"\n\nBob reißt die Augen auf. \"Das Waisenhaus!\"\n\n\"Ganz genau\", sagt Justus leise. \"Der Anfang ihrer kleinen Familie. Bob — zum alten Waisenhaus von Rocky Beach.\"\n\nWie die Brauerei von Eleanor Marsh steht auch das alte Waisenhaus schon seit Jahren leer. Ein stilles, in die Jahre gekommenes und von Efeu überwachsenes Gebäude, das noch das Leben erahnen lassen, das hier einst herrschte.\n\n\"Ein riesiges Haus\", flüstert Peter und lässt den Lichtkegel der Taschenlampe über die bröckelnde Fassade wandern. \"Wo genau sollen wir da bloß suchen?\"\n\n\"Denkt an den Brief\", sagt Justus. \"Eleanor hat jedes Wort mit Bedacht gewählt.\"",
       "task": {
         "type": "code",
-        "prompt": "In welchem Raum des Waisenhauses müssen die drei ??? suchen? Eleanors Brief verrät es euch:\n\n*Clara, mein Herz,*\n\n*es tut mir unendlich Leid, aber ich muss verschwinden. Es ist besser so, für dich und unseren kleinen Sonnenschein.*\n\n*Dort, wo alles begann, findest Du, was ihr braucht. Schau unter dem doppelten Boden. Der Brief zeigt Dir, wo.*\n\n*Du hast mein Leben zum schönsten Traum gemacht, den ich je träumen durfte.*\n\n*In Liebe, immer,\nE.*",
+        "prompt": "In welchem Raum des Waisenhauses müssen die drei ??? suchen? Eleanors Brief verrät es euch:\n\n*Clara, mein Herz,*\n\n*es tut mir unendlich Leid, aber ich muss verschwinden. Es ist besser so, für dich und unseren kleinen Sonnenschein.*\n\n*Dort, wo alles begann, findest Du, was ihr braucht. Schau unter dem doppelten Boden. Der Brief zeigt Dir, wo.*\n\n*Du hast mein Leben zum schönsten Traum gemacht, den ich je träumen durfte.*\n\n*In Liebe, immer,*\n*E.*",
         "answers": [
-          "Schlafsaal",
-          "Schlafraum",
-          "Schlafzimmer",
+          "Schlafsaal", "Schlaf Saal", "Schlaf-Saal",
+          "Schlafraum", "Schlaf Raum", "Schlaf-Raum",
+          "Schlafzimmer", "Schlaf Zimmer", "Schlaf-Zimmer",
           "Schlaf"
         ],
         "hint": null
