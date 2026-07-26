@@ -1,0 +1,427 @@
+:root {
+  --bg: #14100d;
+  --bg-elevated: #1f1915;
+  --bg-input: #2a221c;
+  --text: #f4ece2;
+  --text-muted: #b3a394;
+  --accent: #c98a3c;
+  --danger: #e2725b;
+  --radius: 14px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+
+#app {
+  position: relative;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.boot {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: var(--text-muted);
+}
+
+/* ---------- Screens ---------- */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.screen-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: calc(var(--safe-top) + 24px) 20px 8px;
+}
+
+.screen-footer {
+  flex: none;
+  padding: 12px 20px calc(var(--safe-bottom) + 16px);
+  background: linear-gradient(to top, var(--bg) 65%, transparent);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  background: var(--bg);
+}
+
+.overlay[hidden] {
+  display: none;
+}
+
+/* ---------- Typografie ---------- */
+
+.eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.story-header {
+  margin-bottom: 18px;
+}
+
+.story-title {
+  margin: 4px 0 0;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+.prose p {
+  margin: 0 0 1.1em;
+  hyphens: auto;
+}
+
+.prose em {
+  color: var(--text-muted);
+}
+
+.prose strong {
+  color: var(--accent);
+}
+
+/* ---------- Bedienelemente ---------- */
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 15px 18px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  min-height: 52px;
+}
+
+.btn + .btn {
+  margin-top: 10px;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #17110b;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: #4a3d33;
+  color: var(--text);
+}
+
+.btn-small {
+  width: auto;
+  min-height: 38px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  border-radius: 10px;
+}
+
+.icon-btn {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #4a3d33;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.input {
+  display: block;
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border: 1px solid #4a3d33;
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  color: var(--text);
+  font: inherit;
+  /* 16px+ verhindert das automatische Hineinzoomen auf iOS. */
+  font-size: 17px;
+}
+
+.input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.form-error {
+  margin: 10px 0 0;
+  min-height: 1.4em;
+  color: var(--danger);
+  font-size: 0.92rem;
+}
+
+.task-hint {
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-elevated);
+  font-size: 0.95rem;
+}
+
+/* ---------- Login ---------- */
+
+.screen-login {
+  justify-content: center;
+  padding: 24px 20px calc(var(--safe-bottom) + 24px);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.login-eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.login-title {
+  margin: 6px 0 10px;
+  font-size: 2.2rem;
+  line-height: 1.1;
+}
+
+.login-hint {
+  margin: 0 0 24px;
+  color: var(--text-muted);
+}
+
+/* ---------- Karte ---------- */
+
+.screen-map {
+  height: 100%;
+}
+
+.map-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(var(--safe-top) + 14px) 16px 12px;
+  background: var(--bg-elevated);
+}
+
+.map-title {
+  margin: 2px 0 0;
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+
+.map-canvas {
+  flex: 1;
+  min-height: 0;
+  background: #2a221c;
+  /* Eigener Stacking-Context: Leaflet gibt seinen Bedienelementen z-index bis
+     1000, die sonst durch die darüberliegenden Story-Screens hindurchscheinen. */
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+}
+
+.map-status {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px calc(var(--safe-bottom) + 12px);
+  background: var(--bg-elevated);
+}
+
+.status-text {
+  min-width: 0;
+}
+
+.status-main {
+  margin: 0;
+  font-weight: 700;
+}
+
+.status-sub {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+/* Leaflet-Marker */
+.pin {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #17110b;
+  border-radius: 50%;
+  font-family: system-ui, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #17110b;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 45%);
+}
+
+.pin-start {
+  background: #7fb069;
+}
+
+.pin-finish {
+  background: #e2725b;
+}
+
+.pin-next {
+  background: var(--accent);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+.pin-done {
+  background: #6f635a;
+  color: #d9cfc5;
+  opacity: 0.85;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 2px 6px rgb(0 0 0 / 45%);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgb(201 138 60 / 25%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pin-next {
+    animation: none;
+  }
+}
+
+.leaflet-container {
+  background: #2a221c;
+  font-family: system-ui, sans-serif;
+}
+
+/* ---------- Modal ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  padding-bottom: calc(var(--safe-bottom) + 16px);
+  background: rgb(0 0 0 / 60%);
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  padding: 22px 20px;
+  border-radius: 20px;
+  background: var(--bg-elevated);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 55%);
+}
+
+.modal-title {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+}
+
+.modal-message {
+  margin: 0 0 18px;
+  color: var(--text-muted);
+}
+
+/* ---------- Debug ---------- */
+
+.debug-panel {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: calc(var(--safe-bottom) + 84px);
+  z-index: 900;
+  padding: 10px 12px;
+  border: 1px solid #4a3d33;
+  border-radius: 12px;
+  background: rgb(31 25 21 / 95%);
+  font-family: system-ui, sans-serif;
+  font-size: 0.85rem;
+}
+
+.debug-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.debug-readout {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-muted);
+}
+
+.debug-slider {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+/* ---------- Fehler ---------- */
+
+.screen-error {
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
