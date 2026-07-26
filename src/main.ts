@@ -11,6 +11,7 @@ import { createTaskScreen } from './screens/task';
 import { GameStore } from './state';
 import type { Config, LatLng, PlacedStation } from './types';
 import { confirmDialog, h, showModal, showToast, type ModalAction } from './ui';
+import { WakeLock } from './wakelock';
 
 class Game {
   private readonly stations: PlacedStation[];
@@ -19,6 +20,10 @@ class Game {
   private readonly overlay: HTMLElement;
   private readonly tracker: PositionTracker;
   private readonly alerter: Alerter;
+  private readonly wakeLock = new WakeLock();
+
+  /** Einmal erzeugt und wiederverwendet — sonst stapelt es sich beim Anmelden. */
+  private debugPanel: HTMLElement | null = null;
 
   /** Verhindert, dass ein bereits gezeigtes Stations-Popup erneut aufpoppt. */
   private triggerPending = false;
@@ -45,9 +50,21 @@ class Game {
       (message) => this.mapScreen.showError(message),
     );
     this.alerter = new Alerter(config.alerts);
+
+    // Genau einmal registrieren. Früher hing das in showGame(), was beim
+    // Abmelden und Wiederanmelden zu mehrfach angehängten Listenern geführt
+    // hätte — mit doppelten Positionsabfragen und doppelten Erinnerungen.
+    document.addEventListener('visibilitychange', () => this.onVisibilityChange());
   }
 
   start(): void {
+    // Passwort in der Config geändert? Dann muss es auch auf diesem Gerät neu
+    // eingegeben werden. Der Fortschritt bleibt dabei stehen.
+    const state = this.store.current;
+    if (state.unlocked && state.authFingerprint !== authFingerprint(this.config)) {
+      this.store.update({ unlocked: false });
+    }
+
     if (!this.store.current.unlocked) {
       this.showLogin();
       return;
@@ -61,7 +78,7 @@ class Game {
         // Der Klick auf "Los geht's" ist die Nutzergeste, die den AudioContext
         // freischaltet — ohne sie bliebe der Alarm an der ersten Station stumm.
         this.alerter.unlockAudio();
-        this.store.update({ unlocked: true });
+        this.store.update({ unlocked: true, authFingerprint: authFingerprint(this.config) });
         this.showGame();
       }),
     );
@@ -71,20 +88,38 @@ class Game {
     this.root.replaceChildren(this.mapScreen.element, this.overlay);
 
     if (isDebugEnabled()) {
-      this.root.append(
-        createDebugPanel({
-          config: this.config,
-          onSimulate: (coords: LatLng | null) => this.tracker.simulate(coords),
-          onSkip: () => this.triggerNext(),
-        }),
-      );
+      this.debugPanel ??= createDebugPanel({
+        config: this.config,
+        onSimulate: (coords: LatLng | null) => this.tracker.simulate(coords),
+        onSkip: () => this.triggerNext(),
+      });
+      this.root.append(this.debugPanel);
     }
 
     this.mapScreen.refreshSize();
     this.tracker.start();
-    document.addEventListener('visibilitychange', () => this.onVisibilityChange());
     void this.alerter.registerServiceWorker(import.meta.env.BASE_URL);
+    if (this.store.current.wakeLockEnabled) void this.wakeLock.enable();
     this.render();
+  }
+
+  /** Zurück zur Passwortseite. Der Spielfortschritt bleibt erhalten. */
+  private async logout(): Promise<void> {
+    const ok = await confirmDialog(
+      'Abmelden?',
+      'Ihr landet wieder auf der Passwort-Seite. Der Spielstand bleibt erhalten — nach dem Anmelden geht es genau hier weiter.',
+      'Abmelden',
+    );
+    if (!ok) return;
+
+    // Auf der Passwortseite braucht nichts davon zu laufen.
+    this.tracker.stop();
+    this.stopReminderTimer();
+    void this.wakeLock.disable();
+    this.triggerPending = false;
+
+    this.store.update({ unlocked: false });
+    this.showLogin();
   }
 
   /**
@@ -97,6 +132,9 @@ class Game {
    * auf, in dem jemand wieder aufs Handy schaut.
    */
   private onVisibilityChange(): void {
+    // Auf der Passwortseite läuft weder Ortung noch Erinnerung.
+    if (!this.store.current.unlocked) return;
+
     if (document.visibilityState === 'hidden') {
       this.hiddenSince = Date.now();
       this.reminderShown = false;
@@ -110,6 +148,8 @@ class Game {
 
     this.tracker.refresh();
     this.mapScreen.refreshSize();
+    // Den Wake Lock gibt das Betriebssystem im Hintergrund selbst frei.
+    void this.wakeLock.reacquireIfWanted();
 
     // Kam die Erinnerung nicht durch, weil der Browser die Seite eingefroren
     // hat, wird sie hier nachgeholt — dann eben als Hinweis in der App.
@@ -409,6 +449,35 @@ class Game {
     }
   }
 
+  /** Schalter fürs Wachhalten des Displays — zeigt seinen Zustand direkt an. */
+  private wakeLockMenuAction(): ModalAction {
+    const on = this.store.current.wakeLockEnabled;
+    return {
+      label: `Display anlassen: ${on ? 'An' : 'Aus'}`,
+      variant: 'ghost',
+      onSelect: async () => {
+        if (!this.wakeLock.supported) {
+          showToast('Dieser Browser kann das Display nicht wachhalten. Am besten die Bildschirmsperre in den Systemeinstellungen hochsetzen.', 9000);
+          return;
+        }
+        if (on) {
+          await this.wakeLock.disable();
+          this.store.update({ wakeLockEnabled: false });
+          showToast('Das Display darf sich wieder von selbst ausschalten.');
+          return;
+        }
+        const ok = await this.wakeLock.enable();
+        this.store.update({ wakeLockEnabled: ok });
+        showToast(
+          ok
+            ? 'Das Display bleibt jetzt an, solange die App offen ist. Das zieht ordentlich Akku — Powerbank bereithalten.'
+            : 'Hat nicht geklappt. Das geht nur, solange die App im Vordergrund ist.',
+          9000,
+        );
+      },
+    };
+  }
+
   private openMenu(): void {
     const state = this.store.current;
     const done = state.completed.length;
@@ -419,6 +488,8 @@ class Game {
       message: `${done} von ${this.stations.length} Stationen erledigt.`,
       dismissible: true,
       actions: [
+        // Erst die Einstellungen, dann Aktionen, zuletzt das Heikle.
+        this.wakeLockMenuAction(),
         ...(notificationAction ? [notificationAction] : []),
         {
           label: 'Station manuell starten',
@@ -437,6 +508,11 @@ class Game {
           variant: 'ghost',
           onSelect: () => this.confirmReset(),
         },
+        {
+          label: 'Abmelden',
+          variant: 'ghost',
+          onSelect: () => void this.logout(),
+        },
         { label: 'Schließen', variant: 'ghost', onSelect: () => {} },
       ],
     });
@@ -453,6 +529,17 @@ class Game {
     this.triggerPending = false;
     this.render();
   }
+}
+
+/**
+ * Kurzform des Passwort-Hashes. Steckt im Spielstand, damit ein Passwortwechsel
+ * in der Config auch auf Geräten greift, die schon entsperrt waren — sonst
+ * bliebe dort für immer das alte Passwort gültig. Kein Sicherheitsmerkmal, nur
+ * ein Vergleichswert: der volle Hash steht ohnehin in der ausgelieferten
+ * config.json.
+ */
+function authFingerprint(config: Config): string {
+  return config.auth.passwordHash.slice(0, 12);
 }
 
 function showFatalError(root: HTMLElement, error: unknown): void {

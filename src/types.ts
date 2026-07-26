@@ -89,4 +89,12 @@ export interface GameState {
   notificationsAsked: boolean;
   /** Ob der iOS-Installationshinweis schon gezeigt wurde. */
   installHintShown: boolean;
+  /** Ob das Display während des Spiels anbleiben soll (Screen Wake Lock). */
+  wakeLockEnabled: boolean;
+  /**
+   * Kurzform des Passwort-Hashes, gegen den zuletzt entsperrt wurde. Ändert
+   * sich das Passwort in der Config, passt der Wert nicht mehr und das Gerät
+   * fragt erneut — ohne das bliebe ein einmal entsperrtes Handy für immer offen.
+   */
+  authFingerprint: string;
 }

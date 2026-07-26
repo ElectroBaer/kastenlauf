@@ -22,7 +22,7 @@ npm run build        # Typprüfung + Produktions-Build nach dist/
 npm run preview      # gebaute Version lokal ansehen
 ```
 
-Das Standard-Passwort ist **`kastenlauf`** — vor dem Spieltag ändern (siehe unten).
+Das Passwort ist **`schnickschnackkrautsalat`** (ändern siehe unten).
 
 ## Alles Anpassbare: `public/config.json`
 
@@ -99,6 +99,18 @@ Und noch eine iOS-Eigenheit, die im Code steckt: Safari kennt den
 gibt es `public/sw.js`. Der Service Worker **cacht bewusst nichts**, damit eine
 kurzfristige Änderung an Story oder Koordinaten am Spieltag garantiert ankommt.
 
+## Das Menü (☰)
+
+Auf dem Kartenscreen oben rechts:
+
+| Eintrag | Was er tut |
+| --- | --- |
+| **Display anlassen** | Hält den Bildschirm wach, damit sich das Handy nicht sperrt und die Ortung weiterläuft. **Standardmäßig aus**, weil es ordentlich Akku zieht. Die Einstellung bleibt über Reloads erhalten. |
+| **Benachrichtigungen einschalten** | Fragt die Berechtigung an; auf dem iPhone erklärt der Eintrag stattdessen, dass die App dafür auf dem Home-Bildschirm liegen muss. Verschwindet, sobald erteilt. |
+| **Station manuell starten** | Notausgang, wenn das GPS streikt: öffnet die nächste Station sofort. |
+| **Spielstand zurücksetzen** | Löscht den Fortschritt, zurück zum Intro. Login und Geräte-Einstellungen bleiben. |
+| **Abmelden** | Zurück zur Passwort-Seite. **Der Spielstand bleibt erhalten** — nach dem Anmelden geht es genau dort weiter. |
+
 ### Passwort ändern
 
 ```bash
@@ -107,6 +119,11 @@ npm run hash -- meinNeuesPasswort
 
 Der ausgegebene Hash kommt nach `auth.passwordHash`. Das Passwort selbst steht nirgends im
 Repo.
+
+Ein geändertes Passwort greift auch auf Geräten, die schon entsperrt waren: Die App merkt
+sich im Spielstand, gegen welchen Hash zuletzt entsperrt wurde, und fragt bei einer
+Abweichung erneut. Der Spielfortschritt bleibt dabei stehen. Ohne diesen Abgleich bliebe
+ein einmal entsperrtes Handy dauerhaft offen und würde die Änderung nie bemerken.
 
 > **Wichtig:** Das Passwort ist eine Hürde, keine Sicherheit. Weil die App kein Backend hat,
 > wird `config.json` mit der ganzen Story und allen Lösungen an jedes Gerät ausgeliefert und
@@ -218,10 +235,12 @@ Was die App stattdessen tut:
    die Seite so lange am Leben lässt, entscheidet er selbst. Klappt es nicht, erscheint
    der Hinweis beim nächsten Öffnen in der App.
 
-**Praktischer Rat für den Spieltag:** Bildschirmsperre auf dem Spiel-Handy hochsetzen
-(iOS: *Einstellungen → Anzeige & Helligkeit → Automatische Sperre → Nie*, Android:
-*Einstellungen → Display → Bildschirm-Timeout*) und die App offen lassen. Dann kommen
-die Stationen so, wie sie sollen.
+**Praktischer Rat für den Spieltag:** Im Menü **Display anlassen** einschalten und die App
+offen lassen. Dann sperrt sich das Handy nicht, die Ortung läuft durch und die Stationen
+kommen so, wie sie sollen — kostet aber spürbar Akku, also Powerbank einpacken. Alternativ
+oder zusätzlich die Bildschirmsperre im System hochsetzen (iOS: *Einstellungen → Anzeige &
+Helligkeit → Automatische Sperre → Nie*, Android: *Einstellungen → Display →
+Bildschirm-Timeout*).
 
 ## Am Spieltag
 
@@ -241,6 +260,7 @@ public/sw.js          Service Worker — nur für Benachrichtigungen auf iOS, ke
 src/main.ts           Spielablauf, Phasenwechsel, Stations-Trigger, Hintergrund-Logik
 src/geo.ts            Haversine, Stationsverteilung, watchPosition
 src/notify.ts         Ton, Vibration, Benachrichtigungen
+src/wakelock.ts       Display wachhalten (Screen Wake Lock)
 src/state.ts          Spielstand im localStorage
 src/config.ts         Laden und Prüfen der Config
 src/auth.ts           SHA-256-Passwortprüfung
