@@ -66,6 +66,8 @@ export function closeModal(): void {
 export function showModal(options: {
   title: string;
   message?: string;
+  /** Eigener Inhalt zwischen Text und Buttons, etwa ein Formular. */
+  content?: HTMLElement;
   actions: ModalAction[];
   dismissible?: boolean;
 }): void {
@@ -81,6 +83,7 @@ export function showModal(options: {
     { class: 'modal', role: 'dialog', 'aria-modal': 'true' },
     h('h2', { class: 'modal-title' }, options.title),
     options.message ? h('p', { class: 'modal-message' }, options.message) : null,
+    options.content ?? null,
     h(
       'div',
       { class: 'modal-actions' },

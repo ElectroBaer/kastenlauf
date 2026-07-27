@@ -40,23 +40,43 @@ class Game {
   private reminderTimer: number | null = null;
   private reminderShown = false;
 
+  /** Config aus der Datei, plus Koordinaten aus dem Debug-Menü, falls gesetzt. */
+  private readonly config: Config;
+  /** Ob gerade Testkoordinaten statt der Config-Werte gelten. */
+  private readonly routeIsOverridden: boolean;
+
   constructor(
     private readonly root: HTMLElement,
-    private readonly config: Config,
+    baseConfig: Config,
   ) {
-    this.triggers = buildTriggers(config);
-    this.store = new GameStore(this.triggers.length);
+    // Der Spielstand muss vor der Config stehen: Er entscheidet über die Route.
+    this.store = new GameStore(baseConfig.stations.length);
+    const override = this.store.current.routeOverride;
+    this.routeIsOverridden = override !== null;
+    this.config = override
+      ? {
+          ...baseConfig,
+          route: {
+            // Beschriftungen aus der Config behalten, nur die Punkte tauschen.
+            start: { ...baseConfig.route.start, ...override.start },
+            finish: { ...baseConfig.route.finish, ...override.finish },
+          },
+        }
+      : baseConfig;
+
+    this.triggers = buildTriggers(this.config);
     this.overlay = h('div', { class: 'overlay', hidden: true });
     this.mapScreen = new MapScreen({
-      config,
+      config: this.config,
       triggers: this.triggers,
+      routeIsOverridden: this.routeIsOverridden,
       onOpenMenu: () => this.openMenu(),
     });
     this.tracker = new PositionTracker(
       (fix) => this.onPosition(fix),
       (message) => this.mapScreen.showError(message),
     );
-    this.alerter = new Alerter(config.alerts);
+    this.alerter = new Alerter(this.config.alerts);
 
     // Genau einmal registrieren. Früher hing das in showGame(), was beim
     // Abmelden und Wiederanmelden zu mehrfach angehängten Listenern geführt
@@ -79,8 +99,17 @@ class Game {
     this.showGame();
   }
 
+  /**
+   * Die Spielfläche. Das Debug-Panel hängt als Geschwister darunter an `#app`
+   * und wird deshalb hier nie mit ersetzt — und kann umgekehrt auch nichts
+   * mehr überdecken.
+   */
+  private get main(): HTMLElement {
+    return this.root.querySelector<HTMLElement>('.app-main') ?? this.root;
+  }
+
   private showLogin(): void {
-    this.root.replaceChildren(
+    this.main.replaceChildren(
       createLoginScreen(this.config, () => {
         // Der Klick auf "Los geht's" ist die Nutzergeste, die den AudioContext
         // freischaltet — ohne sie bliebe der Alarm an der ersten Station stumm.
@@ -92,14 +121,15 @@ class Game {
   }
 
   private showGame(): void {
-    this.root.replaceChildren(this.mapScreen.element, this.overlay);
+    this.main.replaceChildren(this.mapScreen.element, this.overlay);
 
-    if (isDebugEnabled()) {
-      this.debugPanel ??= createDebugPanel({
+    if (isDebugEnabled() && !this.debugPanel) {
+      this.debugPanel = createDebugPanel({
         config: this.config,
         onSimulate: (coords: LatLng | null) => this.tracker.simulate(coords),
         onSkip: () => this.triggerNext(),
       });
+      // An #app, nicht an die Spielfläche: eigener Bereich darunter.
       this.root.append(this.debugPanel);
     }
 
@@ -517,6 +547,94 @@ class Game {
     };
   }
 
+  /**
+   * Start- und Zielkoordinaten von Hand setzen — nur im Debug-Modus.
+   *
+   * Nach dem Übernehmen wird die Seite neu geladen: Die Route steckt in den
+   * Ringabständen, den Kartenebenen und im Simulations-Regler. Ein Reload baut
+   * das nachweislich konsistent neu auf, statt drei Stellen einzeln
+   * nachzuziehen. Der Spielstand überlebt das ohnehin.
+   */
+  private openRouteEditor(): void {
+    const { start, finish } = this.config.route;
+    const field = (label: string, value: number, step = 'any') => {
+      const input = h('input', {
+        class: 'input',
+        type: 'number',
+        step,
+        value: String(value),
+        'aria-label': label,
+      });
+      return { input, row: h('label', { class: 'field' }, h('span', {}, label), input) };
+    };
+
+    const sLat = field('Start – Breite (lat)', start.lat);
+    const sLng = field('Start – Länge (lng)', start.lng);
+    const fLat = field('Ziel – Breite (lat)', finish.lat);
+    const fLng = field('Ziel – Länge (lng)', finish.lng);
+    const error = h('p', { class: 'form-error', role: 'alert' });
+
+    const content = h('div', { class: 'field-grid' }, sLat.row, sLng.row, fLat.row, fLng.row, error);
+
+    const apply = () => {
+      const values = [sLat, sLng, fLat, fLng].map((f) => Number(f.input.value.replace(',', '.')));
+      const [startLat, startLng, finishLat, finishLng] = values as [number, number, number, number];
+
+      if (values.some((v) => !Number.isFinite(v))) {
+        error.textContent = 'Bitte in alle vier Felder eine Zahl eintragen.';
+        return false;
+      }
+      if (Math.abs(startLat) > 90 || Math.abs(finishLat) > 90) {
+        error.textContent = 'Breitengrad muss zwischen −90 und 90 liegen.';
+        return false;
+      }
+      if (Math.abs(startLng) > 180 || Math.abs(finishLng) > 180) {
+        error.textContent = 'Längengrad muss zwischen −180 und 180 liegen.';
+        return false;
+      }
+
+      this.store.update({
+        routeOverride: {
+          start: { lat: startLat, lng: startLng },
+          finish: { lat: finishLat, lng: finishLng },
+        },
+      });
+      location.reload();
+      return true;
+    };
+
+    // Bei ungültiger Eingabe geht der Dialog wieder auf — sonst wäre die
+    // Meldung im selben Moment weg, in dem sie erscheint. Das Formular bleibt
+    // dasselbe Element, die Eingaben stehen also noch drin.
+    const open = () =>
+      showModal({
+        title: 'Start und Ziel ändern',
+        message:
+          'Nur zum Testen. Die Werte gelten auch ohne Debug-Modus — die Karte weist dann sichtbar darauf hin. „Spielstand zurücksetzen“ holt die Koordinaten aus der Config zurück.',
+        content,
+        dismissible: true,
+        actions: [
+          {
+            label: 'Übernehmen und neu laden',
+            onSelect: () => {
+              if (!apply()) open();
+            },
+          },
+          {
+            label: 'Auf Config zurücksetzen',
+            variant: 'ghost',
+            onSelect: () => {
+              this.store.update({ routeOverride: null });
+              location.reload();
+            },
+          },
+          { label: 'Abbrechen', variant: 'ghost', onSelect: () => {} },
+        ],
+      });
+
+    open();
+  }
+
   private openMenu(): void {
     const state = this.store.current;
     const done = state.completed.length;
@@ -547,6 +665,15 @@ class Game {
           variant: 'ghost',
           onSelect: () => this.confirmReset(),
         },
+        ...(isDebugEnabled()
+          ? [
+              {
+                label: 'Start/Ziel ändern',
+                variant: 'ghost' as const,
+                onSelect: () => this.openRouteEditor(),
+              },
+            ]
+          : []),
         {
           label: 'Abmelden',
           variant: 'ghost',
@@ -583,7 +710,8 @@ function authFingerprint(config: Config): string {
 
 function showFatalError(root: HTMLElement, error: unknown): void {
   const message = error instanceof Error ? error.message : String(error);
-  root.replaceChildren(
+  const target = root.querySelector<HTMLElement>('.app-main') ?? root;
+  target.replaceChildren(
     h(
       'section',
       { class: 'screen screen-error' },

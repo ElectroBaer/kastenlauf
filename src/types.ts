@@ -102,4 +102,11 @@ export interface GameState {
    * fragt erneut — ohne das bliebe ein einmal entsperrtes Handy für immer offen.
    */
   authFingerprint: string;
+  /**
+   * Im Debug-Menü gesetzte Start-/Zielkoordinaten. Gelten auch außerhalb des
+   * Debug-Modus, damit sich eine Testroute unter realen Bedingungen
+   * durchspielen lässt — die Karte weist dann sichtbar darauf hin.
+   * `null` = die Werte aus der Config gelten.
+   */
+  routeOverride: { start: LatLng; finish: LatLng } | null;
 }

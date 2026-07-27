@@ -148,7 +148,8 @@ Auf dem Kartenscreen oben rechts:
 | **Display anlassen** | Hält den Bildschirm wach, damit sich das Handy nicht sperrt und die Ortung weiterläuft. **Standardmäßig aus**, weil es ordentlich Akku zieht. Die Einstellung bleibt über Reloads erhalten. |
 | **Benachrichtigungen einschalten** | Fragt die Berechtigung an; auf dem iPhone erklärt der Eintrag stattdessen, dass die App dafür auf dem Home-Bildschirm liegen muss. Verschwindet, sobald erteilt. |
 | **Station manuell starten** | Notausgang, wenn das GPS streikt: öffnet die nächste Station sofort. |
-| **Spielstand zurücksetzen** | Löscht den Fortschritt, zurück zum Intro. Login und Geräte-Einstellungen bleiben. |
+| **Spielstand zurücksetzen** | Löscht den Fortschritt, zurück zum Intro. Login und Geräte-Einstellungen bleiben; im Debug-Modus gesetzte Testkoordinaten werden verworfen. |
+| **Start/Ziel ändern** | Nur mit `?debug=1`: Koordinaten für eine Testroute setzen. |
 | **Abmelden** | Zurück zur Passwort-Seite. **Der Spielstand bleibt erhalten** — nach dem Anmelden geht es genau dort weiter. |
 
 ### Passwort ändern
@@ -212,9 +213,21 @@ Koordinaten und Passwort-Hash in `config.json`.
 ## Testen ohne durch die Stadt zu laufen
 
 `?debug=1` an die URL hängen, also z. B. `http://localhost:5173/kastenlauf/?debug=1`.
-Unten erscheint ein Panel mit einem Regler, der eine simulierte Position entlang der Route
-schiebt — damit lässt sich der komplette Lauf am Schreibtisch durchspielen. "GPS" schaltet
-zurück auf das echte Signal, "Station auslösen" springt direkt in die nächste Station.
+Als eigener Bereich unter der Oberfläche erscheint ein Panel mit einem Regler, der eine
+simulierte Position entlang der Route schiebt — damit lässt sich der komplette Lauf am
+Schreibtisch durchspielen. "GPS" schaltet zurück auf das echte Signal, "Station auslösen"
+springt direkt in die nächste Station. Das Spielfeld darüber wird entsprechend kleiner, das
+Panel überdeckt also nie Eingabefelder oder Buttons.
+
+Zusätzlich gibt es im Debug-Modus **☰ → Start/Ziel ändern**: vier Felder für die
+Koordinaten, mit denen sich eine kurze Testroute vor der Haustür einrichten lässt, statt
+die echte Strecke ablaufen zu müssen. Nach dem Übernehmen lädt die Seite neu, damit
+Ringabstände, Karte und Regler garantiert zusammenpassen.
+
+> Diese Testkoordinaten gelten **auch ohne `?debug=1`** — nur so lässt sich eine Testroute
+> unter realen Bedingungen durchspielen. Damit das nie unbemerkt bleibt, steht dann
+> dauerhaft „⚠ Testkoordinaten aktiv" in der Statuszeile der Karte.
+> **☰ → Spielstand zurücksetzen** holt die Koordinaten aus der Config zurück.
 
 Im normalen Spiel gibt es zusätzlich unter **☰ → Station manuell starten** einen Notausgang,
 falls am Spieltag das GPS streikt.

@@ -1,7 +1,25 @@
-import type { GameState } from './types';
+import type { GameState, LatLng } from './types';
 
 const STORAGE_KEY = 'kastenlauf.state';
 const STATE_VERSION = 1;
+
+const isLatLng = (value: unknown): value is LatLng => {
+  const point = value as LatLng | undefined;
+  return (
+    !!point &&
+    typeof point.lat === 'number' &&
+    typeof point.lng === 'number' &&
+    Math.abs(point.lat) <= 90 &&
+    Math.abs(point.lng) <= 180
+  );
+};
+
+/** Unbrauchbare Werte werden verworfen, statt die App damit lahmzulegen. */
+function readRouteOverride(value: unknown): GameState['routeOverride'] {
+  const override = value as GameState['routeOverride'];
+  if (!override || !isLatLng(override.start) || !isLatLng(override.finish)) return null;
+  return { start: override.start, finish: override.finish };
+}
 
 function initialState(): GameState {
   return {
@@ -14,6 +32,7 @@ function initialState(): GameState {
     installHintShown: false,
     wakeLockEnabled: false,
     authFingerprint: '',
+    routeOverride: null,
   };
 }
 
@@ -46,6 +65,9 @@ export class GameStore {
   reset(): void {
     // Nur der Spielfortschritt geht zurück. Login und die einmal beantworteten
     // Gerätefragen sind keine Story und sollen nicht erneut aufpoppen.
+    //
+    // routeOverride wird bewusst NICHT übernommen: Zurücksetzen soll auch die
+    // Start-/Zielkoordinaten wieder auf die Werte aus der Config bringen.
     const { unlocked, notificationsAsked, installHintShown, wakeLockEnabled, authFingerprint } =
       this.state;
     this.state = {
@@ -85,6 +107,7 @@ export class GameStore {
         installHintShown: parsed.installHintShown === true,
         wakeLockEnabled: parsed.wakeLockEnabled === true,
         authFingerprint: typeof parsed.authFingerprint === 'string' ? parsed.authFingerprint : '',
+        routeOverride: readRouteOverride(parsed.routeOverride),
       };
     } catch {
       // Privater Modus oder beschädigter Eintrag: lieber frisch anfangen.
