@@ -31,6 +31,7 @@ function initialState(): GameState {
     notificationsAsked: false,
     installHintShown: false,
     wakeLockEnabled: false,
+    debugEnabled: false,
     authFingerprint: '',
     routeOverride: null,
   };
@@ -68,14 +69,22 @@ export class GameStore {
     //
     // routeOverride wird bewusst NICHT übernommen: Zurücksetzen soll auch die
     // Start-/Zielkoordinaten wieder auf die Werte aus der Config bringen.
-    const { unlocked, notificationsAsked, installHintShown, wakeLockEnabled, authFingerprint } =
-      this.state;
+    const {
+      unlocked,
+      notificationsAsked,
+      installHintShown,
+      wakeLockEnabled,
+      debugEnabled,
+      authFingerprint,
+    } = this.state;
     this.state = {
       ...initialState(),
       unlocked,
       notificationsAsked,
       installHintShown,
       wakeLockEnabled,
+      // Mitten im Testen aus dem Debug-Modus zu fliegen wäre lästig.
+      debugEnabled,
       authFingerprint,
     };
     this.write();
@@ -106,6 +115,7 @@ export class GameStore {
         notificationsAsked: parsed.notificationsAsked === true,
         installHintShown: parsed.installHintShown === true,
         wakeLockEnabled: parsed.wakeLockEnabled === true,
+        debugEnabled: parsed.debugEnabled === true,
         authFingerprint: typeof parsed.authFingerprint === 'string' ? parsed.authFingerprint : '',
         routeOverride: readRouteOverride(parsed.routeOverride),
       };

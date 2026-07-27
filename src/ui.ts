@@ -53,7 +53,13 @@ export function renderStoryText(text: string): HTMLDivElement {
 export interface ModalAction {
   label: string;
   variant?: 'primary' | 'ghost';
-  onSelect: () => void;
+  /**
+   * Lässt den Dialog offen. Für Umschalter sinnvoll — man will nach dem
+   * Antippen sehen, was passiert ist, und ggf. gleich nochmal tippen.
+   */
+  keepOpen?: boolean;
+  /** Bekommt den eigenen Button, um z.B. die Beschriftung zu aktualisieren. */
+  onSelect: (button: HTMLButtonElement) => void;
 }
 
 let openModal: HTMLElement | null = null;
@@ -87,20 +93,21 @@ export function showModal(options: {
     h(
       'div',
       { class: 'modal-actions' },
-      ...options.actions.map((action) =>
-        h(
+      ...options.actions.map((action) => {
+        const button = h(
           'button',
           {
             class: `btn ${action.variant === 'ghost' ? 'btn-ghost' : 'btn-primary'}`,
             type: 'button',
             onclick: () => {
-              closeModal();
-              action.onSelect();
+              if (!action.keepOpen) closeModal();
+              action.onSelect(button);
             },
           },
           action.label,
-        ),
-      ),
+        );
+        return button;
+      }),
     ),
   );
   backdrop.append(dialog);

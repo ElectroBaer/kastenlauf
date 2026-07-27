@@ -143,7 +143,7 @@ Auf dem Kartenscreen oben rechts:
 
 | Eintrag | Was er tut |
 | --- | --- |
-| **Display anlassen** | Hält den Bildschirm wach, damit sich das Handy nicht sperrt und die Ortung weiterläuft. **Standardmäßig aus**, weil es ordentlich Akku zieht. Die Einstellung bleibt über Reloads erhalten. |
+| **Display anlassen** | Hält den Bildschirm wach, damit sich das Handy nicht sperrt und die Ortung weiterläuft. **Standardmäßig aus**, weil es ordentlich Akku zieht. Die Einstellung bleibt über Reloads erhalten. Achtmal schnell antippen schaltet den [Debug-Modus](#testen-ohne-durch-die-stadt-zu-laufen) um. |
 | **Benachrichtigungen einschalten** | Fragt die Berechtigung an; auf dem iPhone erklärt der Eintrag stattdessen, dass die App dafür auf dem Home-Bildschirm liegen muss. Verschwindet, sobald erteilt. |
 | **Station manuell starten** | Notausgang, wenn das GPS streikt: öffnet die nächste Station sofort. |
 | **Spielstand zurücksetzen** | Löscht den Fortschritt, zurück zum Intro. Login und Geräte-Einstellungen bleiben; im Debug-Modus gesetzte Testkoordinaten werden verworfen. |
@@ -210,7 +210,15 @@ Koordinaten und Passwort-Hash in `config.json`.
 
 ## Testen ohne durch die Stadt zu laufen
 
-`?debug=1` an die URL hängen, also z. B. `http://localhost:5173/kastenlauf/?debug=1`.
+Zwei Wege hinein: `?debug=1` an die URL hängen (z. B.
+`http://localhost:5173/kastenlauf/?debug=1`), oder — praktischer auf dem Handy —
+**achtmal schnell hintereinander auf ☰ → „Display anlassen" tippen**. Das Menü bleibt
+dabei offen, ein Hinweis bestätigt das Umschalten, und der Zustand übersteht einen Reload.
+Nochmal achtmal tippen schaltet wieder aus.
+
+Die Taps schalten nebenbei ganz normal den Wake Lock um; da acht eine gerade Zahl ist,
+steht die Einstellung hinterher wieder so wie vorher. Eine Pause von mehr als 800 ms setzt
+die Zählung zurück, normales Bedienen des Schalters löst also nichts aus.
 Als eigener Bereich unter der Oberfläche erscheint ein Panel mit einem Regler, der eine
 simulierte Position entlang der Route schiebt — damit lässt sich der komplette Lauf am
 Schreibtisch durchspielen. "GPS" schaltet zurück auf das echte Signal, "Station auslösen"

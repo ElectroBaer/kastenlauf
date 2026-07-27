@@ -48,6 +48,20 @@ export class WakeLock {
     if (!this.supported || this.sentinel) return this.sentinel !== null;
     try {
       const sentinel = await navigator.wakeLock.request('screen');
+
+      // Während des await kann längst wieder abgeschaltet worden sein — beim
+      // schnellen Hin- und Herschalten passiert genau das. Dann den frisch
+      // erhaltenen Lock sofort wieder hergeben, statt ihn zu behalten: sonst
+      // bliebe das Display an, obwohl die Einstellung "Aus" anzeigt.
+      if (!this.wanted) {
+        try {
+          await sentinel.release();
+        } catch {
+          // Schon weg — nichts zu tun.
+        }
+        return false;
+      }
+
       this.sentinel = sentinel;
       // Auch das System kann den Lock jederzeit fallen lassen (Akkusparmodus,
       // Hintergrund). Dann muss das Feld wieder leer sein, damit ein späteres

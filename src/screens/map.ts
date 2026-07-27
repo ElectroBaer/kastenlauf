@@ -48,6 +48,8 @@ export class MapScreen {
   private targetRingRadius = 0;
   private targetLabel = 'zur nächsten Station';
   private lastFix: PositionFix | null = null;
+  /** Simulation beendet, aber noch keine echte Position eingetroffen. */
+  private awaitingRealFix = false;
 
   constructor(private readonly options: MapScreenOptions) {
     const canvas = h('div', { class: 'map-canvas' });
@@ -196,8 +198,19 @@ export class MapScreen {
     this.updateStatus();
   }
 
+  /**
+   * Die Simulation wurde abgeschaltet. Der Hinweis wird sofort korrigiert,
+   * statt auf den nächsten GPS-Fix zu warten — sonst behauptete die
+   * Statuszeile womöglich noch minutenlang "Simulierte Position".
+   */
+  clearSimulationNotice(): void {
+    this.awaitingRealFix = this.lastFix?.simulated === true;
+    this.updateStatus();
+  }
+
   setPosition(fix: PositionFix): void {
     this.lastFix = fix;
+    if (!fix.simulated) this.awaitingRealFix = false;
 
     if (!this.positionMarker) {
       this.accuracyCircle = L.circle(fix.coords, {
@@ -248,8 +261,12 @@ export class MapScreen {
       return;
     }
     this.statusSub.classList.remove('status-warn');
-    this.statusSub.textContent = this.lastFix.simulated
-      ? 'Simulierte Position (Debug-Modus)'
-      : `GPS-Genauigkeit ±${Math.round(this.lastFix.accuracy)} m`;
+    if (this.awaitingRealFix) {
+      this.statusSub.textContent = 'Warte auf echtes GPS-Signal …';
+    } else {
+      this.statusSub.textContent = this.lastFix.simulated
+        ? 'Simulierte Position (Debug-Modus)'
+        : `GPS-Genauigkeit ±${Math.round(this.lastFix.accuracy)} m`;
+    }
   }
 }
