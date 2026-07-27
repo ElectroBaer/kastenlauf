@@ -35,6 +35,10 @@ class Game {
   /** Verhindert, dass ein bereits gezeigtes Stations-Popup erneut aufpoppt. */
   private triggerPending = false;
 
+  /** Versteckte Geste: acht schnelle Taps auf „Display anlassen“. */
+  private debugTaps = 0;
+  private lastDebugTap = 0;
+
   /** Zeitpunkt, zu dem die Seite in den Hintergrund ging (0 = sichtbar). */
   private hiddenSince = 0;
   private reminderTimer: number | null = null;
@@ -120,19 +124,37 @@ class Game {
     );
   }
 
-  private showGame(): void {
-    this.main.replaceChildren(this.mapScreen.element, this.overlay);
+  /** Über `?debug=1` in der URL oder über die Tap-Geste im Menü. */
+  private get debugMode(): boolean {
+    return isDebugEnabled() || this.store.current.debugEnabled;
+  }
 
-    if (isDebugEnabled() && !this.debugPanel) {
-      this.debugPanel = createDebugPanel({
+  /** Blendet das Simulations-Panel passend zum Debug-Modus ein oder aus. */
+  private applyDebugMode(): void {
+    if (this.debugMode) {
+      this.debugPanel ??= createDebugPanel({
         config: this.config,
         onSimulate: (coords: LatLng | null) => this.tracker.simulate(coords),
         onSkip: () => this.triggerNext(),
       });
       // An #app, nicht an die Spielfläche: eigener Bereich darunter.
-      this.root.append(this.debugPanel);
+      if (!this.debugPanel.isConnected) this.root.append(this.debugPanel);
+      return;
     }
 
+    this.debugPanel?.remove();
+    // Sonst bliebe eine simulierte Position aktiv, ohne dass man sie noch
+    // sehen oder zurücksetzen könnte. Danach gleich eine echte Position holen:
+    // simulate(null) allein sendet keine, die Statuszeile würde also weiter
+    // "Simulierte Position" behaupten, bis zufällig ein GPS-Update eintrudelt.
+    this.tracker.simulate(null);
+    this.mapScreen.clearSimulationNotice();
+    this.tracker.refresh();
+  }
+
+  private showGame(): void {
+    this.main.replaceChildren(this.mapScreen.element, this.overlay);
+    this.applyDebugMode();
     this.mapScreen.refreshSize();
     this.tracker.start();
     void this.alerter.registerServiceWorker(import.meta.env.BASE_URL);
@@ -519,33 +541,83 @@ class Game {
     }
   }
 
-  /** Schalter fürs Wachhalten des Displays — zeigt seinen Zustand direkt an. */
+  /**
+   * Schalter fürs Wachhalten des Displays — zeigt seinen Zustand direkt an und
+   * lässt das Menü offen, damit man das Ergebnis sieht und ggf. gleich weiter
+   * tippen kann. Acht schnelle Taps schalten zusätzlich den Debug-Modus um.
+   */
   private wakeLockMenuAction(): ModalAction {
-    const on = this.store.current.wakeLockEnabled;
+    const label = () => `Display anlassen: ${this.store.current.wakeLockEnabled ? 'An' : 'Aus'}`;
     return {
-      label: `Display anlassen: ${on ? 'An' : 'Aus'}`,
+      label: label(),
       variant: 'ghost',
-      onSelect: async () => {
+      keepOpen: true,
+      onSelect: async (button) => {
+        // Hat dieser Tap den Debug-Modus umgeschaltet? Dann bekommt dessen
+        // Meldung den Vorrang und wird ganz zum Schluss gezeigt — showToast
+        // ersetzt den vorherigen Hinweis, ein früherer Aufruf wäre also
+        // sofort wieder überschrieben.
+        const debugToggled = this.countDebugTap();
+        const say = (text: string, ms?: number) => {
+          if (!debugToggled) showToast(text, ms);
+        };
+
+        // Zustand bei jedem Tap frisch lesen: Der Button bleibt stehen und
+        // wird mehrfach gedrückt, ein beim Menüaufbau gemerkter Wert wäre
+        // schon beim zweiten Tap falsch.
+        const on = this.store.current.wakeLockEnabled;
+
         if (!this.wakeLock.supported) {
-          showToast('Dieser Browser kann das Display nicht wachhalten. Am besten die Bildschirmsperre in den Systemeinstellungen hochsetzen.', 9000);
-          return;
-        }
-        if (on) {
+          say(
+            'Dieser Browser kann das Display nicht wachhalten. Am besten die Bildschirmsperre in den Systemeinstellungen hochsetzen.',
+            9000,
+          );
+        } else if (on) {
           await this.wakeLock.disable();
           this.store.update({ wakeLockEnabled: false });
-          showToast('Das Display darf sich wieder von selbst ausschalten.');
-          return;
+          button.textContent = label();
+          say('Das Display darf sich wieder von selbst ausschalten.');
+        } else {
+          const ok = await this.wakeLock.enable();
+          this.store.update({ wakeLockEnabled: ok });
+          button.textContent = label();
+          say(
+            ok
+              ? 'Das Display bleibt jetzt an, solange die App offen ist. Das zieht ordentlich Akku, haltet als eine Powerbank bereit.'
+              : 'Hat nicht geklappt. Das geht nur, solange die App im Vordergrund ist.',
+            9000,
+          );
         }
-        const ok = await this.wakeLock.enable();
-        this.store.update({ wakeLockEnabled: ok });
-        showToast(
-          ok
-            ? 'Das Display bleibt jetzt an, solange die App offen ist. Das zieht ordentlich Akku, haltet als eine Powerbank bereit.'
-            : 'Hat nicht geklappt. Das geht nur, solange die App im Vordergrund ist.',
-          9000,
-        );
+
+        if (debugToggled) this.announceDebugMode();
       },
     };
+  }
+
+  /**
+   * Versteckte Geste: acht Taps in schneller Folge schalten den Debug-Modus um.
+   * Eine Pause von mehr als 800 ms setzt die Zählung zurück, damit normales
+   * Bedienen des Schalters ihn nicht versehentlich auslöst.
+   */
+  private countDebugTap(): boolean {
+    const now = Date.now();
+    this.debugTaps = now - this.lastDebugTap <= 800 ? this.debugTaps + 1 : 1;
+    this.lastDebugTap = now;
+    if (this.debugTaps < 8) return false;
+
+    this.debugTaps = 0;
+    this.store.update({ debugEnabled: !this.store.current.debugEnabled });
+    this.applyDebugMode();
+    return true;
+  }
+
+  private announceDebugMode(): void {
+    showToast(
+      this.store.current.debugEnabled
+        ? 'Debug-Modus aktiviert — unten erscheint die GPS-Simulation, im Menü „Start/Ziel ändern“.'
+        : 'Debug-Modus deaktiviert.',
+      6000,
+    );
   }
 
   /**
@@ -666,7 +738,7 @@ class Game {
           variant: 'ghost',
           onSelect: () => this.confirmReset(),
         },
-        ...(isDebugEnabled()
+        ...(this.debugMode
           ? [
               {
                 label: 'Start/Ziel ändern',

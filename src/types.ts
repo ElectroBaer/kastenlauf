@@ -97,6 +97,11 @@ export interface GameState {
   /** Ob das Display während des Spiels anbleiben soll (Screen Wake Lock). */
   wakeLockEnabled: boolean;
   /**
+   * Debug-Modus, umgeschaltet über acht schnelle Taps auf „Display anlassen“.
+   * Wirkt zusätzlich zum URL-Parameter `?debug=1`.
+   */
+  debugEnabled: boolean;
+  /**
    * Kurzform des Passwort-Hashes, gegen den zuletzt entsperrt wurde. Ändert
    * sich das Passwort in der Config, passt der Wert nicht mehr und das Gerät
    * fragt erneut — ohne das bliebe ein einmal entsperrtes Handy für immer offen.
