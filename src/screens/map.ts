@@ -1,8 +1,8 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-import { distanceMeters, formatDistance, type PositionFix } from '../geo';
-import type { Config, LatLng, PlacedStation } from '../types';
+import { distanceMeters, formatDistance, type PositionFix, type StationTrigger } from '../geo';
+import type { Config, LatLng } from '../types';
 import { h } from '../ui';
 
 function pin(className: string, label: string): L.DivIcon {
@@ -16,7 +16,7 @@ function pin(className: string, label: string): L.DivIcon {
 
 export interface MapScreenOptions {
   config: Config;
-  stations: PlacedStation[];
+  triggers: StationTrigger[];
   onOpenMenu: () => void;
 }
 
@@ -37,7 +37,13 @@ export class MapScreen {
   private positionMarker: L.CircleMarker | null = null;
   private accuracyCircle: L.Circle | null = null;
   private autoFollow = true;
+  /** Punkt, auf den sich die Statuszeile bezieht. */
   private target: LatLng | null = null;
+  /**
+   * Bei einem Ring der Radius um das Ziel: Die Statuszeile zeigt dann nicht die
+   * Luftlinie zum Ziel, sondern wie viel noch bis zur Ringlinie fehlt.
+   */
+  private targetRingRadius = 0;
   private targetLabel = 'zur nächsten Station';
   private lastFix: PositionFix | null = null;
 
@@ -122,50 +128,64 @@ export class MapScreen {
   }
 
   /**
-   * Zeichnet Stationen und Zielmarkierung passend zum Fortschritt neu.
-   * `stationIndex` ist die als Nächstes anstehende Station; liegt er hinter
-   * der letzten Station, ist der Zielpunkt das Ziel.
+   * Zeichnet die nächste Marke passend zum Fortschritt neu. `stationIndex` ist
+   * die als Nächstes anstehende Station; liegt er hinter der letzten Station,
+   * geht es zum Zielpunkt.
+   *
+   * Gezeichnet wird immer nur die *nächste* Marke: bei einer Ring-Station der
+   * Kreis um das Ziel, in den das Team hineinlaufen muss, bei einer
+   * `coords`-Station Pin und Trigger-Radius an ihrem Ort.
    */
-  render(stationIndex: number, completed: number[]): void {
+  render(stationIndex: number): void {
     this.stationLayer.clearLayers();
+    const { finish } = this.options.config.route;
+    const next = this.options.triggers[stationIndex];
 
-    this.options.stations.forEach((station, index) => {
-      if (completed.includes(station.id)) {
-        L.marker(station.position, {
-          icon: pin('pin-done', '✓'),
-          title: `${station.title} — erledigt`,
-        }).addTo(this.stationLayer);
-      } else if (index === stationIndex) {
-        L.circle(station.position, {
-          radius: this.options.config.triggerRadiusMeters,
-          color: '#b26a00',
-          fillColor: '#b26a00',
-          fillOpacity: 0.2,
-          weight: 2,
-        }).addTo(this.stationLayer);
-        L.marker(station.position, {
-          icon: pin('pin-next', '?'),
-          title: `Nächste Station: ${station.title}`,
-        }).addTo(this.stationLayer);
-      }
-      // Noch nicht erreichte spätere Stationen bleiben absichtlich verborgen.
-    });
-
-    const nextStation = this.options.stations[stationIndex];
-    if (nextStation) {
-      this.target = nextStation.position;
-      this.targetLabel = 'zur nächsten Station';
-      this.title.textContent = `Station ${stationIndex + 1} von ${this.options.stations.length}`;
-    } else {
-      this.target = this.options.config.route.finish;
+    if (!next) {
+      this.target = finish;
+      this.targetRingRadius = 0;
       this.targetLabel = 'bis zum Ziel';
       this.title.textContent = 'Auf zum Ziel';
-      L.circle(this.options.config.route.finish, {
+      L.circle(finish, {
         radius: this.options.config.triggerRadiusMeters,
-        color: '#c98a3c',
-        fillColor: '#c98a3c',
-        fillOpacity: 0.15,
+        color: '#b26a00',
+        fillColor: '#b26a00',
+        fillOpacity: 0.2,
         weight: 2,
+      }).addTo(this.stationLayer);
+      this.updateStatus();
+      return;
+    }
+
+    this.title.textContent = `Station ${stationIndex + 1} von ${this.options.triggers.length}`;
+    this.targetLabel = 'zur nächsten Station';
+
+    if (next.kind === 'ring') {
+      this.target = finish;
+      this.targetRingRadius = next.remainingMeters;
+      L.circle(finish, {
+        radius: next.remainingMeters,
+        color: '#b26a00',
+        fillColor: '#b26a00',
+        // Nur ein dünner Ring: Die Fläche ist riesig, eine Füllung würde die
+        // halbe Karte überdecken. Durchgezogen, damit er nicht mit der
+        // gestrichelten Luftlinie verwechselt wird.
+        fillOpacity: 0.05,
+        weight: 4,
+      }).addTo(this.stationLayer);
+    } else {
+      this.target = next.coords;
+      this.targetRingRadius = 0;
+      L.circle(next.coords, {
+        radius: this.options.config.triggerRadiusMeters,
+        color: '#b26a00',
+        fillColor: '#b26a00',
+        fillOpacity: 0.2,
+        weight: 2,
+      }).addTo(this.stationLayer);
+      L.marker(next.coords, {
+        icon: pin('pin-next', '?'),
+        title: `Nächste Station: ${next.station.title}`,
       }).addTo(this.stationLayer);
     }
 
@@ -208,7 +228,12 @@ export class MapScreen {
 
   private updateStatus(): void {
     if (!this.lastFix || !this.target) return;
-    const remaining = distanceMeters(this.lastFix.coords, this.target);
+    // Beim Ring zählt nicht die Luftlinie zum Ziel, sondern was bis zur
+    // Ringlinie fehlt — also die Strecke, die das Team noch gutmachen muss.
+    const remaining = Math.max(
+      0,
+      distanceMeters(this.lastFix.coords, this.target) - this.targetRingRadius,
+    );
     this.statusMain.textContent = `Noch ${formatDistance(remaining)} ${this.targetLabel}`;
     this.statusSub.textContent = this.lastFix.simulated
       ? 'Simulierte Position (Debug-Modus)'

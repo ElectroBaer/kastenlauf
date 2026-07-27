@@ -24,8 +24,18 @@ export interface Station {
   storyBefore: string;
   task: Task;
   storyAfter: string;
-  /** Überschreibt die automatisch berechnete Position auf der Route. */
-  coords: LatLng | null;
+  /**
+   * Eigener Ring: Restentfernung zum Ziel in Metern, ab der diese Station
+   * auslöst. Ohne Angabe wird sie gleichmäßig zwischen Start und Ziel verteilt.
+   */
+  remainingMeters?: number | null;
+  /**
+   * Fester Punkt statt Ring — löst aus, wenn das Gerät näher als
+   * `triggerRadiusMeters` herankommt. Nur setzen, wenn eine Station zwingend an
+   * einen bestimmten Ort gehört: Anders als ein Ring lässt sich ein Punkt bei
+   * ungünstiger Route verfehlen.
+   */
+  coords?: LatLng | null;
 }
 
 export interface StoryPart {
@@ -59,11 +69,6 @@ export interface Config {
   intro: StoryPart;
   outro: StoryPart;
   stations: Station[];
-}
-
-/** Eine Station samt ihrer aufgelösten Position auf der Karte. */
-export interface PlacedStation extends Station {
-  position: LatLng;
 }
 
 /**

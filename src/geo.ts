@@ -1,4 +1,4 @@
-import type { Config, LatLng, PlacedStation } from './types';
+import type { Config, LatLng, Station } from './types';
 
 const EARTH_RADIUS_M = 6371008.8;
 
@@ -24,17 +24,70 @@ export function interpolate(from: LatLng, to: LatLng, t: number): LatLng {
 }
 
 /**
- * Verteilt die Stationen gleichmäßig auf der Luftlinie Start→Ziel: Station i
- * von n liegt bei i/(n+1), also strikt zwischen Start und Ziel. Eine Station
- * mit gesetzten `coords` behält ihre Position aus der Config.
+ * Wann eine Station fällig ist.
+ *
+ * - `ring`: sobald die Restentfernung zum **Ziel** unter `remainingMeters`
+ *   fällt. Das ist der Normalfall und der Grund für dieses Modell: Ringe um
+ *   den Zielpunkt durchquert man auf jeder Route. Feste Punkte auf der
+ *   Luftlinie verfehlt man dagegen, sobald der Weg nicht schnurgerade läuft.
+ * - `point`: klassisch die Nähe zu festen Koordinaten. Nur wenn in der Config
+ *   ausdrücklich `coords` gesetzt ist.
  */
-export function placeStations(config: Config): PlacedStation[] {
-  const { start, finish } = config.route;
+export type StationTrigger =
+  | { kind: 'ring'; station: Station; remainingMeters: number }
+  | { kind: 'point'; station: Station; coords: LatLng };
+
+/**
+ * Baut die Auslöser. Ohne Override liegt Station i von n bei einer
+ * Restentfernung von D·(n+1−i)/(n+1) — dieselben Abstände wie zuvor, nur eben
+ * als Ring statt als Punkt.
+ */
+export function buildTriggers(config: Config): StationTrigger[] {
   const total = config.stations.length;
-  return config.stations.map((station, index) => ({
-    ...station,
-    position: station.coords ?? interpolate(start, finish, (index + 1) / (total + 1)),
-  }));
+  const routeLength = distanceMeters(config.route.start, config.route.finish);
+
+  return config.stations.map((station, index) => {
+    if (station.coords) {
+      return { kind: 'point', station, coords: station.coords };
+    }
+    const remaining = station.remainingMeters ?? (routeLength * (total - index)) / (total + 1);
+    return { kind: 'ring', station, remainingMeters: remaining };
+  });
+}
+
+function isDue(
+  trigger: StationTrigger,
+  position: LatLng,
+  distanceToFinish: number,
+  triggerRadiusMeters: number,
+): boolean {
+  return trigger.kind === 'ring'
+    ? distanceToFinish <= trigger.remainingMeters
+    : distanceMeters(position, trigger.coords) <= triggerRadiusMeters;
+}
+
+/**
+ * Wie viele Stationen inzwischen fällig sind. Gesucht wird der **höchste**
+ * fällige Index — alles davor gilt damit automatisch als überfällig.
+ *
+ * Für Ring-Stationen ändert das nichts, die sind ohnehin monoton. Es ist der
+ * Überholschutz für `coords`-Stationen: Wer an einem festen Punkt vorbeiläuft,
+ * ohne ihn zu treffen, bekommt die Station spätestens beim nächsten fälligen
+ * Ring nachgereicht, statt für immer festzuhängen.
+ */
+export function dueStationCount(
+  triggers: StationTrigger[],
+  position: LatLng,
+  distanceToFinish: number,
+  triggerRadiusMeters: number,
+): number {
+  for (let i = triggers.length - 1; i >= 0; i--) {
+    const trigger = triggers[i];
+    if (trigger && isDue(trigger, position, distanceToFinish, triggerRadiusMeters)) {
+      return i + 1;
+    }
+  }
+  return 0;
 }
 
 export function formatDistance(meters: number): string {

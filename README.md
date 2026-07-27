@@ -46,16 +46,56 @@ bekommt man z. B. über einen Rechtsklick in Google Maps oder OpenStreetMap.
 ein guter Startwert: eng genug, um sich wie ein echter Zielpunkt anzufühlen, weit genug für
 die übliche GPS-Ungenauigkeit in der Stadt. Zwischen Häuserschluchten lieber 60–80 m.
 
-### Stationen verteilen
+### Wann eine Station auslöst
 
-Die 8 Stationen werden automatisch gleichmäßig auf der Luftlinie zwischen Start und Ziel
-verteilt (Station *i* von *n* bei `i/(n+1)`). Wer eine Station lieber an einem bestimmten
-Ort haben möchte — an einem Brunnen, einer Bank, einer Kreuzung — trägt bei ihr Koordinaten
-ein; alle anderen bleiben automatisch verteilt:
+Nicht an einem festen Punkt, sondern **sobald die Restentfernung zum Ziel klein genug
+wird**. Man kann sich das als konzentrische Ringe um den Zielpunkt vorstellen: Station 1
+liegt weit außen, Station 8 kurz vor dem Ziel, und das Team durchquert sie beim
+Näherkommen der Reihe nach.
+
+Der Grund: Ein fester Punkt auf der Luftlinie wird verfehlt, sobald der Weg nicht
+schnurgerade verläuft — und Straßen verlaufen nun mal nicht schnurgerade. Einen Ring um
+das Ziel durchquert man dagegen auf **jeder** Route.
+
+Bei `n` Stationen und einer Luftlinie von `D` Metern löst Station *i* aus, sobald weniger
+als `D · (n+1−i) / (n+1)` Meter bis zum Ziel übrig sind. Für die aktuelle Route (4,0 km,
+8 Stationen) heißt das: Station 1 bei 3553 m Restentfernung, Station 2 bei 3109 m, …,
+Station 8 bei 444 m. Die Abstände entsprechen genau der Aufteilung der Strecke — nur ist
+es egal, auf welchem Weg ihr näher kommt.
+
+**Mehrere Stationen auf einmal.** Wer die App eine Weile in der Tasche hatte und dabei
+mehrere Ringe überschritten hat, bekommt die Stationen nacheinander in der richtigen
+Reihenfolge nachgereicht. Das Popup sagt dann auch, wie viele noch offen sind.
+
+Die Karte zeigt immer nur den **nächsten** Ring als Kreis um das Ziel — die Linie, in die
+ihr hineinlaufen müsst. Die Statuszeile nennt die Meter bis dorthin, nicht die Luftlinie
+zum Ziel.
+
+#### Einzelne Stationen anders auslösen
+
+Zwei optionale Felder pro Station, beide dürfen **nicht gleichzeitig** gesetzt sein (die
+App lehnt das mit einer Fehlermeldung ab):
+
+```json
+"remainingMeters": 800
+```
+
+Eigener Ring: *"Diese Station auslösen, sobald weniger als 800 m bis zum Ziel übrig
+sind."* Die Werte sollten über die Stationen hinweg kleiner werden, sonst rücken frühere
+Stationen mit auf (siehe Überholschutz unten).
 
 ```json
 "coords": { "lat": 48.1402, "lng": 11.5810 }
 ```
+
+Fester Punkt, wie gehabt über `triggerRadiusMeters` — für Stationen, die zwingend an einen
+bestimmten Ort gehören. **Mit Bedacht einsetzen:** Genau so eine Station kann verfehlt
+werden, wenn die Route nicht daran vorbeiführt.
+
+Damit daraus keine Sackgasse wird, gibt es einen **Überholschutz**: Eine Station gilt auch
+dann als fällig, wenn eine spätere Station fällig ist. Wer an einem festen Punkt
+vorbeiläuft, ohne ihn zu treffen, bekommt die Station also spätestens beim nächsten Ring
+nachgereicht, statt für immer festzuhängen.
 
 ### Alarm bei Stationsankunft
 
@@ -146,6 +186,7 @@ Jede Station hat denselben Aufbau:
     "hint": null
   },
   "storyAfter": "Text nach der Aufgabe …",
+  "remainingMeters": null,
   "coords": null
 }
 ```
@@ -160,8 +201,8 @@ Jede Station hat denselben Aufbau:
 
 Im Text funktionieren Absätze (Leerzeile), `*kursiv*` und `**fett**`.
 
-Stationen lassen sich hinzufügen oder streichen — die Verteilung auf der Karte passt sich
-automatisch an. Nur `id` muss eindeutig bleiben.
+Stationen lassen sich hinzufügen oder streichen — die Ringe verteilen sich automatisch neu.
+Nur `id` muss eindeutig bleiben.
 
 `story.md` bleibt als lesbare Fassung im Repo. Es wird zur Laufzeit **nicht** gelesen;
 Quelle der Wahrheit ist `config.json`. Wer die Story komplett neu schreibt, kann sie mit
