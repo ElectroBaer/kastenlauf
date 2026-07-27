@@ -243,7 +243,7 @@ export class MapScreen {
     // Überschriebene Koordinaten haben Vorrang in der Anzeige: Sie sollen nie
     // unbemerkt aktiv sein, auch nicht außerhalb des Debug-Modus.
     if (this.options.routeIsOverridden) {
-      this.statusSub.textContent = '⚠ Testkoordinaten aktiv (nicht die aus der Config)';
+      this.statusSub.textContent = '⚠ Testkoordinaten aktiv';
       this.statusSub.classList.add('status-warn');
       return;
     }

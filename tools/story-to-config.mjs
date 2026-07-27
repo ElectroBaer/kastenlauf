@@ -136,7 +136,7 @@ const config = {
   subtitle: 'Ein Fall für die drei ???',
   auth: {
     // Neuen Hash erzeugen mit: npm run hash -- <passwort>
-    passwordHash: createHash('sha256').update('schnickschnackkrautsalat', 'utf8').digest('hex'),
+    passwordHash: createHash('sha256').update('kastenlauf', 'utf8').digest('hex'),
   },
   route: {
     // PLATZHALTER (Marienplatz → Englischer Garten, München).

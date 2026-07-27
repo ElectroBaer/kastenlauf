@@ -144,7 +144,7 @@ class Game {
   private async logout(): Promise<void> {
     const ok = await confirmDialog(
       'Abmelden?',
-      'Ihr landet wieder auf der Passwort-Seite. Der Spielstand bleibt erhalten — nach dem Anmelden geht es genau hier weiter.',
+      'Ihr landet wieder auf der Passwort-Seite. Der Spielstand bleibt erhalten, nach dem erneuten Anmelden geht es genau hier weiter.',
       'Abmelden',
     );
     if (!ok) return;
@@ -213,7 +213,7 @@ class Game {
       if (Date.now() >= dueAt) {
         void this.alerter.notify(
           'Der Fall wartet!',
-          'Schaut mal wieder auf die Karte — die nächste Station will gefunden werden.',
+          'Schaut mal wieder auf die Karte. Die nächste Station will gefunden werden.',
         );
         this.reminderShown = true;
         this.stopReminderTimer();
@@ -392,7 +392,7 @@ class Game {
     const pending = fix ? this.dueCount(fix.coords) - state.stationIndex - 1 : 0;
     const backlog =
       pending > 0
-        ? ` Ihr habt einiges aufzuholen — danach warten noch ${pending} weitere ${
+        ? ` Ihr habt einiges aufzuholen. Danach warten noch ${pending} weitere ${
             pending === 1 ? 'Station' : 'Stationen'
           }.`
         : '';
@@ -435,7 +435,7 @@ class Game {
       this.store.update({ installHintShown: true });
       showToast(
         'Tipp fürs iPhone: Legt die App über „Teilen → Zum Home-Bildschirm“ ab. ' +
-          'Nur dann kann sie euch an einer Station benachrichtigen — der Ton kommt aber so oder so.',
+          'Nur dann kann sie euch über eine neue Station benachrichtigen. Ein Ton kommt bei geöffneter App aber so oder so.',
         12000,
       );
       return;
@@ -446,7 +446,7 @@ class Game {
     showModal({
       title: 'Sollen wir euch Bescheid geben?',
       message:
-        'Dann meldet sich das Handy mit Ton und einer Benachrichtigung, sobald ihr eine Station erreicht — praktisch, wenn es in der Tasche steckt.',
+        'Dann meldet sich das Handy mit Ton und einer Benachrichtigung, sobald ihr eine Station erreicht. Praktisch, wenn es in der Tasche steckt.',
       dismissible: true,
       actions: [
         { label: 'Ja, gerne', onSelect: () => void this.alerter.requestPermission() },
@@ -476,7 +476,8 @@ class Game {
               message:
                 'Safari zeigt Benachrichtigungen nur für Web-Apps auf dem Home-Bildschirm. ' +
                 'Tippt unten auf das Teilen-Symbol, dann auf „Zum Home-Bildschirm“, und startet die App von dort. ' +
-                'Danach lässt sich die Berechtigung hier im Menü erteilen. Der Ton an den Stationen funktioniert auch ohne das.',
+                'Danach lässt sich die Berechtigung hier im Menü erteilen. ' +
+                'Ein Hinweis-Ton an den Stationen funktioniert bei geöffneter App aber auch ohne das.',
               dismissible: true,
               actions: [{ label: 'Verstanden', onSelect: () => {} }],
             }),
@@ -510,7 +511,7 @@ class Game {
             const granted = await this.alerter.requestPermission();
             showToast(
               granted
-                ? 'Alles klar — ihr bekommt ab jetzt eine Meldung an jeder Station.'
+                ? 'Alles klar, ihr bekommt ab jetzt eine Meldung an jeder Station.'
                 : 'Bleibt aus. Über das Menü könnt ihr es jederzeit nochmal versuchen.',
             );
           },
@@ -539,7 +540,7 @@ class Game {
         this.store.update({ wakeLockEnabled: ok });
         showToast(
           ok
-            ? 'Das Display bleibt jetzt an, solange die App offen ist. Das zieht ordentlich Akku — Powerbank bereithalten.'
+            ? 'Das Display bleibt jetzt an, solange die App offen ist. Das zieht ordentlich Akku, haltet als eine Powerbank bereit.'
             : 'Hat nicht geklappt. Das geht nur, solange die App im Vordergrund ist.',
           9000,
         );
@@ -610,7 +611,7 @@ class Game {
       showModal({
         title: 'Start und Ziel ändern',
         message:
-          'Nur zum Testen. Die Werte gelten auch ohne Debug-Modus — die Karte weist dann sichtbar darauf hin. „Spielstand zurücksetzen“ holt die Koordinaten aus der Config zurück.',
+          'Nur zum Testen. Die Werte gelten auch ohne Debug-Modus, die Karte weist dann sichtbar darauf hin. „Spielstand zurücksetzen“ holt die Koordinaten aus der Config zurück.',
         content,
         dismissible: true,
         actions: [
@@ -654,7 +655,7 @@ class Game {
           onSelect: async () => {
             const ok = await confirmDialog(
               'Station manuell starten?',
-              'Nur benutzen, wenn das GPS nicht mitspielt: Die nächste Station wird sofort geöffnet, egal wo ihr gerade seid.',
+              'Nur benutzen, wenn das GPS nicht mitspielt. Die nächste Station wird sofort geöffnet, egal wo ihr gerade seid.',
               'Ja, starten',
             );
             if (ok) this.triggerNext();

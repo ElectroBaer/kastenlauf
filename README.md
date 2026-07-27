@@ -22,8 +22,6 @@ npm run build        # Typprüfung + Produktions-Build nach dist/
 npm run preview      # gebaute Version lokal ansehen
 ```
 
-Das Passwort ist **`schnickschnackkrautsalat`** (ändern siehe unten).
-
 ## Alles Anpassbare: `public/config.json`
 
 Route, Passwort und die komplette Story stehen in einer einzigen Datei. Nach dem
@@ -183,7 +181,7 @@ Jede Station hat denselben Aufbau:
   "task": {
     "type": "code",
     "prompt": "Was das Team tun soll …",
-    "answers": ["7592"],
+    "answers": ["1234"],
     "hint": null
   },
   "storyAfter": "Text nach der Aufgabe …",
@@ -194,8 +192,8 @@ Jede Station hat denselben Aufbau:
 
 - `type: "code"` — Eingabefeld mit Lösungsprüfung. Alle Einträge in `answers` werden
   akzeptiert. Verglichen wird normalisiert, also ohne Rücksicht auf Groß-/Kleinschreibung,
-  Satzzeichen, Umlaute und Leerzeichen: `E. Skinner Norris`, `e skinner norris` und
-  `ESkinnerNorris` gelten alle als richtig.
+  Satzzeichen, Umlaute und Leerzeichen: `J. Jonas`, `j jonas` und
+  `JJonas` gelten alle als richtig.
 - `type: "acknowledge"` — für Aufgaben ohne Lösungswort (Video-, Geschicklichkeits- und
   Teamaufgaben). Es erscheint nur ein "Aufgabe erledigt"-Button.
 - `hint` — optionaler Tipp; ist er gesetzt, erscheint ein "Tipp anzeigen"-Button.

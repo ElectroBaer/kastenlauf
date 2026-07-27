@@ -76,7 +76,7 @@ function validate(raw: unknown): Config {
       }
       if (station.coords) {
         fail(
-          `${where}: coords und remainingMeters schließen sich aus — entweder fester Punkt oder Ring um das Ziel`,
+          `${where}: coords und remainingMeters schließen sich aus. Entweder fester Punkt oder Ring um das Ziel`,
         );
       }
     }

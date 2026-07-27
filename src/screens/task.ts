@@ -4,7 +4,7 @@ import { h, renderStoryText } from '../ui';
 /**
  * Vereinheitlicht Eingabe und Musterlösung, damit am Spieltag nicht an
  * Groß-/Kleinschreibung, Punkten oder Leerzeichen gescheitert wird:
- * "E. Skinner Norris", "e skinner norris" und "ESkinnerNorris" sind gleich.
+ * "J. Jonas", "j jonas" und "JJonas" sind gleich.
  */
 export function normalizeAnswer(value: string): string {
   return value
