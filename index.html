@@ -19,7 +19,12 @@
   </head>
   <body>
     <div id="app">
-      <div class="boot">Lade …</div>
+      <!-- Die Spielfläche. Im Debug-Modus kommt darunter noch das
+           Simulations-Panel als eigener Bereich, wodurch diese hier
+           entsprechend schrumpft. -->
+      <div class="app-main">
+        <div class="boot">Lade …</div>
+      </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

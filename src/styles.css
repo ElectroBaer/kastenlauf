@@ -48,9 +48,22 @@ body {
   overscroll-behavior: none;
 }
 
+/*
+ * Spielfläche oben, Debug-Panel darunter — als Geschwister im Fluss, nicht
+ * übereinander. Vorher schwebte das Panel mit hohem z-index über allem und
+ * verdeckte damit die Eingabefelder und Buttons der Aufgaben-Screens.
+ */
 #app {
-  position: relative;
+  display: flex;
+  flex-direction: column;
   height: 100dvh;
+  overflow: hidden;
+}
+
+.app-main {
+  position: relative;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -311,6 +324,11 @@ body {
   font-size: 0.88rem;
 }
 
+.status-warn {
+  color: var(--danger);
+  font-weight: 700;
+}
+
 /* Leaflet-Marker: kräftige Füllung, weiße Schrift, weißer Rand und dunkler
    Schatten — so heben sie sich von hellen wie dunklen Kartenkacheln ab. */
 .pin {
@@ -354,8 +372,27 @@ body {
   }
 }
 
+/* Der Ring der nächsten Station ist ein SVG-Pfad — box-shadow greift dort
+   nicht, also pulsieren stattdessen Linienstärke und Deckkraft. */
+.ring-next {
+  animation: ring-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes ring-pulse {
+  0%,
+  100% {
+    stroke-opacity: 0.55;
+    stroke-width: 3;
+  }
+  50% {
+    stroke-opacity: 1;
+    stroke-width: 7;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .pin-next {
+  .pin-next,
+  .ring-next {
     animation: none;
   }
 }
@@ -403,6 +440,27 @@ body {
   color: var(--text-muted);
 }
 
+/* Formular im Modal, z.B. der Koordinaten-Editor im Debug-Modus. */
+.field-grid {
+  margin-bottom: 18px;
+}
+
+.field {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.field > span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.field .input {
+  margin-bottom: 0;
+}
+
 /* ---------- Toast ---------- */
 
 .toast {
@@ -436,17 +494,12 @@ body {
 
 /* ---------- Debug ---------- */
 
+/* Fester Bereich unter der Spielfläche — kein Overlay mehr. */
 .debug-panel {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: calc(var(--safe-bottom) + 84px);
-  z-index: 900;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: rgb(255 255 255 / 96%);
-  box-shadow: 0 2px 10px rgb(26 21 18 / 15%);
+  flex: none;
+  padding: 10px 12px calc(var(--safe-bottom) + 10px);
+  border-top: 2px solid var(--accent);
+  background: var(--bg-elevated);
   font-family: system-ui, sans-serif;
   font-size: 0.85rem;
 }

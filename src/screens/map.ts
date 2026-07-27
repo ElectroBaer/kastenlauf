@@ -17,6 +17,8 @@ function pin(className: string, label: string): L.DivIcon {
 export interface MapScreenOptions {
   config: Config;
   triggers: StationTrigger[];
+  /** Läuft das Spiel gerade mit im Debug-Menü gesetzten Koordinaten? */
+  routeIsOverridden: boolean;
   onOpenMenu: () => void;
 }
 
@@ -172,6 +174,8 @@ export class MapScreen {
         // gestrichelten Luftlinie verwechselt wird.
         fillOpacity: 0.05,
         weight: 4,
+        // Angriffspunkt für die Puls-Animation aus styles.css.
+        className: 'ring-next',
       }).addTo(this.stationLayer);
     } else {
       this.target = next.coords;
@@ -235,6 +239,15 @@ export class MapScreen {
       distanceMeters(this.lastFix.coords, this.target) - this.targetRingRadius,
     );
     this.statusMain.textContent = `Noch ${formatDistance(remaining)} ${this.targetLabel}`;
+
+    // Überschriebene Koordinaten haben Vorrang in der Anzeige: Sie sollen nie
+    // unbemerkt aktiv sein, auch nicht außerhalb des Debug-Modus.
+    if (this.options.routeIsOverridden) {
+      this.statusSub.textContent = '⚠ Testkoordinaten aktiv (nicht die aus der Config)';
+      this.statusSub.classList.add('status-warn');
+      return;
+    }
+    this.statusSub.classList.remove('status-warn');
     this.statusSub.textContent = this.lastFix.simulated
       ? 'Simulierte Position (Debug-Modus)'
       : `GPS-Genauigkeit ±${Math.round(this.lastFix.accuracy)} m`;
