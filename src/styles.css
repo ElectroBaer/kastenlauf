@@ -91,6 +91,20 @@ body {
   padding: calc(var(--safe-top) + 24px) 20px 8px;
 }
 
+/* Menüleiste der Story- und Aufgaben-Screens. Steht außerhalb von
+   .screen-scroll, damit der Knopf beim Lesen nicht wegscrollt. */
+.screen-bar {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  padding: calc(var(--safe-top) + 10px) 16px 0;
+}
+
+/* Der Titel darunter braucht dann oben keinen eigenen Abstand mehr. */
+.screen-bar + .screen-scroll {
+  padding-top: 12px;
+}
+
 .screen-footer {
   flex: none;
   padding: 12px 20px calc(var(--safe-bottom) + 16px);
@@ -175,6 +189,15 @@ body {
   background: var(--bg-elevated);
   border-color: var(--border);
   color: var(--text);
+}
+
+/* Werkzeuge, die nichts mit dem Spiel zu tun haben — deutlich abgesetzt, damit
+   sie auch beim ersten Blick ins Menü nicht wie Spielfunktionen wirken. */
+.btn-debug {
+  background: transparent;
+  border: 1px dashed var(--danger);
+  color: var(--danger);
+  font-style: italic;
 }
 
 .btn-small {
@@ -438,6 +461,28 @@ body {
 .modal-message {
   margin: 0 0 18px;
   color: var(--text-muted);
+}
+
+/* Beschriftete Trennlinie vor dem Debug-Block im Menü. */
+.modal-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 10px;
+  color: var(--danger);
+  font-family: system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.modal-divider::before,
+.modal-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px dashed var(--danger);
+  opacity: 0.5;
 }
 
 /* Formular im Modal, z.B. der Koordinaten-Editor im Debug-Modus. */

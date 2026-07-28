@@ -139,16 +139,23 @@ kurzfristige Änderung an Story oder Koordinaten am Spieltag garantiert ankommt.
 
 ## Das Menü (☰)
 
-Auf dem Kartenscreen oben rechts:
+Oben rechts erreichbar — auf der Karte **und** während der Stationstexte, damit man
+nicht erst einen Text zu Ende klicken muss, um etwas umzustellen.
 
 | Eintrag | Was er tut |
 | --- | --- |
 | **Display anlassen** | Hält den Bildschirm wach, damit sich das Handy nicht sperrt und die Ortung weiterläuft. **Standardmäßig aus**, weil es ordentlich Akku zieht. Die Einstellung bleibt über Reloads erhalten. Achtmal schnell antippen schaltet den [Debug-Modus](#testen-ohne-durch-die-stadt-zu-laufen) um. |
 | **Benachrichtigungen einschalten** | Fragt die Berechtigung an; auf dem iPhone erklärt der Eintrag stattdessen, dass die App dafür auf dem Home-Bildschirm liegen muss. Verschwindet, sobald erteilt. |
-| **Station manuell starten** | Notausgang, wenn das GPS streikt: öffnet die nächste Station sofort. |
+| **Station manuell starten** | Notausgang, wenn das GPS streikt: öffnet die nächste Station sofort. Nur auf der Karte — während eines Stationstextes gäbe es nichts auszulösen. |
 | **Spielstand zurücksetzen** | Löscht den Fortschritt, zurück zum Intro. Login und Geräte-Einstellungen bleiben; im Debug-Modus gesetzte Testkoordinaten werden verworfen. |
-| **Start/Ziel ändern** | Nur mit `?debug=1`: Koordinaten für eine Testroute setzen. |
-| **Abmelden** | Zurück zur Passwort-Seite. **Der Spielstand bleibt erhalten** — nach dem Anmelden geht es genau dort weiter. |
+
+Darunter, abgesetzt und kursiv-rot, die **Debug-Werkzeuge** — nur sichtbar, wenn der
+Debug-Modus an ist. So kann das spielende Team sie nicht versehentlich erwischen:
+
+| Eintrag | Was er tut |
+| --- | --- |
+| ***Start/Ziel ändern*** | Koordinaten für eine Testroute setzen. |
+| ***Abmelden und alles löschen*** | Der harte Reset: löscht **alles** Gespeicherte — Fortschritt, Login, Einstellungen, Testkoordinaten und das Debug-Flag — und führt zurück zur Passwort-Seite. Weil das Debug-Flag mit weg ist, ist danach auch der Debug-Modus aus; mit `?debug=1` oder acht Taps ist er sofort zurück. |
 
 ### Passwort ändern
 

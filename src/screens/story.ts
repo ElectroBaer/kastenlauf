@@ -1,4 +1,4 @@
-import { h, renderStoryText } from '../ui';
+import { createMenuBar, h, renderStoryText } from '../ui';
 
 export function createStoryScreen(options: {
   eyebrow?: string;
@@ -6,10 +6,12 @@ export function createStoryScreen(options: {
   text: string;
   actionLabel: string;
   onContinue: () => void;
+  onOpenMenu?: () => void;
 }): HTMLElement {
   return h(
     'section',
     { class: 'screen screen-story' },
+    options.onOpenMenu ? createMenuBar(options.onOpenMenu) : null,
     h(
       'div',
       { class: 'screen-scroll' },

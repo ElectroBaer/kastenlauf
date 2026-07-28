@@ -52,7 +52,11 @@ export function renderStoryText(text: string): HTMLDivElement {
 
 export interface ModalAction {
   label: string;
-  variant?: 'primary' | 'ghost';
+  /**
+   * `debug` kennzeichnet Werkzeuge, die nichts mit dem Spiel zu tun haben.
+   * Sie werden ans Ende gesetzt und deutlich abgehoben dargestellt.
+   */
+  variant?: 'primary' | 'ghost' | 'debug';
   /**
    * Lässt den Dialog offen. Für Umschalter sinnvoll — man will nach dem
    * Antippen sehen, was passiert ist, und ggf. gleich nochmal tippen.
@@ -93,11 +97,11 @@ export function showModal(options: {
     h(
       'div',
       { class: 'modal-actions' },
-      ...options.actions.map((action) => {
+      ...options.actions.flatMap((action, index) => {
         const button = h(
           'button',
           {
-            class: `btn ${action.variant === 'ghost' ? 'btn-ghost' : 'btn-primary'}`,
+            class: `btn btn-${action.variant ?? 'primary'}`,
             type: 'button',
             onclick: () => {
               if (!action.keepOpen) closeModal();
@@ -106,7 +110,15 @@ export function showModal(options: {
           },
           action.label,
         );
-        return button;
+
+        // Vor dem ersten Debug-Eintrag eine beschriftete Trennlinie: So liest
+        // sich der Rest als angehängter Werkzeugkasten, nicht als weitere
+        // Menüpunkte.
+        const startsDebugBlock =
+          action.variant === 'debug' && options.actions[index - 1]?.variant !== 'debug';
+        return startsDebugBlock
+          ? [h('p', { class: 'modal-divider' }, 'Debug'), button]
+          : [button];
       }),
     ),
   );
@@ -139,6 +151,25 @@ export function showToast(message: string, durationMs = 6000): void {
   document.body.append(toast);
   openToast = toast;
   setTimeout(() => toast.remove(), durationMs);
+}
+
+/**
+ * Schmale Leiste mit dem Menüknopf für die Overlay-Screens.
+ *
+ * Bewusst als eigene Zeile **über** dem scrollenden Inhalt: Der Kopf mit Titel
+ * scrollt mit dem Text weg, dort läge der Knopf nach ein paar Zeilen außer
+ * Reichweite. Absolut positioniert würde er über langen Überschriften liegen.
+ */
+export function createMenuBar(onOpenMenu: () => void): HTMLElement {
+  return h(
+    'div',
+    { class: 'screen-bar' },
+    h(
+      'button',
+      { class: 'icon-btn', type: 'button', 'aria-label': 'Menü', onclick: onOpenMenu },
+      '☰',
+    ),
+  );
 }
 
 export function confirmDialog(

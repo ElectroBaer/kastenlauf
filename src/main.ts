@@ -162,12 +162,16 @@ class Game {
     this.render();
   }
 
-  /** Zurück zur Passwortseite. Der Spielfortschritt bleibt erhalten. */
+  /**
+   * Harter Reset für Testläufe: zurück zur Passwortseite, und alles Gespeicherte
+   * wird gelöscht. Deshalb steckt der Eintrag im Debug-Block — mitten im Spiel
+   * versehentlich angetippt wäre er sonst eine Katastrophe.
+   */
   private async logout(): Promise<void> {
     const ok = await confirmDialog(
-      'Abmelden?',
-      'Ihr landet wieder auf der Passwort-Seite. Der Spielstand bleibt erhalten, nach dem erneuten Anmelden geht es genau hier weiter.',
-      'Abmelden',
+      'Abmelden und alles löschen?',
+      'Löscht alles, was die App gespeichert hat: Fortschritt, Login, Einstellungen und Testkoordinaten. Danach steht ihr wieder ganz am Anfang.',
+      'Alles löschen',
     );
     if (!ok) return;
 
@@ -176,8 +180,11 @@ class Game {
     this.stopReminderTimer();
     void this.wakeLock.disable();
     this.triggerPending = false;
+    this.debugTaps = 0;
 
-    this.store.update({ unlocked: false });
+    this.store.clear();
+    // Das Debug-Flag ist mit gelöscht — ohne ?debug=1 also auch das Panel weg.
+    this.applyDebugMode();
     this.showLogin();
   }
 
@@ -283,6 +290,7 @@ class Game {
           text: this.config.intro.text,
           actionLabel: 'Fall übernehmen',
           onContinue: () => this.goTo('map'),
+          onOpenMenu: () => this.openMenu(),
         });
 
       case 'storyBefore':
@@ -293,6 +301,7 @@ class Game {
           text: station.storyBefore,
           actionLabel: 'Zur Aufgabe',
           onContinue: () => this.goTo('task'),
+          onOpenMenu: () => this.openMenu(),
         });
 
       case 'task':
@@ -303,6 +312,7 @@ class Game {
             this.store.markCompleted(station.id);
             this.goTo('storyAfter');
           },
+          onOpenMenu: () => this.openMenu(),
         });
 
       case 'storyAfter':
@@ -317,6 +327,7 @@ class Game {
             this.store.update({ stationIndex: stationIndex + 1 });
             this.goTo('map');
           },
+          onOpenMenu: () => this.openMenu(),
         });
 
       case 'outro':
@@ -326,6 +337,7 @@ class Game {
           text: this.config.outro.text,
           actionLabel: 'Von vorn beginnen',
           onContinue: () => this.confirmReset(),
+          onOpenMenu: () => this.openMenu(),
         });
 
       default:
@@ -718,41 +730,48 @@ class Game {
       message: `${done} von ${this.triggers.length} Stationen erledigt.`,
       dismissible: true,
       actions: [
-        // Erst die Einstellungen, dann Aktionen, zuletzt das Heikle.
+        // Erst die Einstellungen, dann Aktionen, dann Schließen — und ganz
+        // unten abgesetzt die Werkzeuge, die nichts mit dem Spiel zu tun haben.
         this.wakeLockMenuAction(),
         ...(notificationAction ? [notificationAction] : []),
-        {
-          label: 'Station manuell starten',
-          variant: 'ghost',
-          onSelect: async () => {
-            const ok = await confirmDialog(
-              'Station manuell starten?',
-              'Nur benutzen, wenn das GPS nicht mitspielt. Die nächste Station wird sofort geöffnet, egal wo ihr gerade seid.',
-              'Ja, starten',
-            );
-            if (ok) this.triggerNext();
-          },
-        },
+        // Außerhalb der Karte liefe der Eintrag ins Leere: triggerNext() steigt
+        // bei einer anderen Phase sofort wieder aus.
+        ...(state.phase === 'map'
+          ? [
+              {
+                label: 'Station manuell starten',
+                variant: 'ghost' as const,
+                onSelect: async () => {
+                  const ok = await confirmDialog(
+                    'Station manuell starten?',
+                    'Nur benutzen, wenn das GPS nicht mitspielt. Die nächste Station wird sofort geöffnet, egal wo ihr gerade seid.',
+                    'Ja, starten',
+                  );
+                  if (ok) this.triggerNext();
+                },
+              },
+            ]
+          : []),
         {
           label: 'Spielstand zurücksetzen',
           variant: 'ghost',
           onSelect: () => this.confirmReset(),
         },
+        { label: 'Schließen', variant: 'ghost', onSelect: () => {} },
         ...(this.debugMode
           ? [
               {
                 label: 'Start/Ziel ändern',
-                variant: 'ghost' as const,
+                variant: 'debug' as const,
                 onSelect: () => this.openRouteEditor(),
+              },
+              {
+                label: 'Abmelden und alles löschen',
+                variant: 'debug' as const,
+                onSelect: () => void this.logout(),
               },
             ]
           : []),
-        {
-          label: 'Abmelden',
-          variant: 'ghost',
-          onSelect: () => void this.logout(),
-        },
-        { label: 'Schließen', variant: 'ghost', onSelect: () => {} },
       ],
     });
   }
