@@ -90,6 +90,20 @@ export class GameStore {
     this.write();
   }
 
+  /**
+   * Löscht wirklich alles, was die App gespeichert hat — Fortschritt, Login,
+   * Geräte-Einstellungen, Testkoordinaten, Debug-Flag. Anders als `reset()`,
+   * das nur die Story zurückdreht.
+   */
+  clear(): void {
+    this.state = initialState();
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Kein Speicher verfügbar — der Zustand im Arbeitsspeicher ist ohnehin weg.
+    }
+  }
+
   private read(): GameState {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);

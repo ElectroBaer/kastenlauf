@@ -1,5 +1,5 @@
 import type { Station } from '../types';
-import { h, renderStoryText } from '../ui';
+import { createMenuBar, h, renderStoryText } from '../ui';
 
 /**
  * Vereinheitlicht Eingabe und Musterlösung, damit am Spieltag nicht an
@@ -23,6 +23,7 @@ export function isCorrect(input: string, answers: string[]): boolean {
 export function createTaskScreen(options: {
   station: Station;
   onSolved: () => void;
+  onOpenMenu?: () => void;
 }): HTMLElement {
   const { station } = options;
   const body = h(
@@ -107,5 +108,11 @@ export function createTaskScreen(options: {
     footer.append(form);
   }
 
-  return h('section', { class: 'screen screen-task' }, body, footer);
+  return h(
+    'section',
+    { class: 'screen screen-task' },
+    options.onOpenMenu ? createMenuBar(options.onOpenMenu) : null,
+    body,
+    footer,
+  );
 }
