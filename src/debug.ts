@@ -14,6 +14,7 @@ export function createDebugPanel(options: {
   config: Config;
   onSimulate: (coords: LatLng | null) => void;
   onSkip: () => void;
+  onEvent: () => void;
 }): HTMLElement {
   const { start, finish } = options.config.route;
   const routeLength = distanceMeters(start, finish);
@@ -61,6 +62,11 @@ export function createDebugPanel(options: {
         'button',
         { class: 'btn btn-ghost btn-small', type: 'button', onclick: options.onSkip },
         'Station auslösen',
+      ),
+      h(
+        'button',
+        { class: 'btn btn-ghost btn-small', type: 'button', onclick: options.onEvent },
+        'Ereignis auslösen',
       ),
     ),
     slider,

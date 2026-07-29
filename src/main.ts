@@ -10,14 +10,15 @@ import {
   type PositionFix,
   type StationTrigger,
 } from './geo';
+import { RandomEventScheduler } from './events';
 import { Alerter } from './notify';
 import { createLoginScreen } from './screens/login';
 import { MapScreen } from './screens/map';
 import { createStoryScreen } from './screens/story';
 import { createTaskScreen } from './screens/task';
 import { GameStore } from './state';
-import type { Config, LatLng } from './types';
-import { confirmDialog, h, showModal, showToast, type ModalAction } from './ui';
+import type { Config, LatLng, RandomEvent } from './types';
+import { confirmDialog, h, renderStoryText, showModal, showToast, type ModalAction } from './ui';
 import { WakeLock } from './wakelock';
 
 class Game {
@@ -34,6 +35,15 @@ class Game {
 
   /** Verhindert, dass ein bereits gezeigtes Stations-Popup erneut aufpoppt. */
   private triggerPending = false;
+
+  /**
+   * Zufallsevents. Das Popup blockiert währenddessen die Stationsauslösung —
+   * showModal() ersetzt einen offenen Dialog, eine fällige Station würde das
+   * Event sonst kommentarlos überschreiben.
+   */
+  private readonly events: RandomEventScheduler;
+  private eventPending = false;
+  private eventTimer: number | null = null;
 
   /** Versteckte Geste: acht schnelle Taps auf „Display anlassen“. */
   private debugTaps = 0;
@@ -81,6 +91,7 @@ class Game {
       (message) => this.mapScreen.showError(message),
     );
     this.alerter = new Alerter(this.config.alerts);
+    this.events = new RandomEventScheduler(this.config.randomEvents, this.store);
 
     // Genau einmal registrieren. Früher hing das in showGame(), was beim
     // Abmelden und Wiederanmelden zu mehrfach angehängten Listenern geführt
@@ -136,6 +147,7 @@ class Game {
         config: this.config,
         onSimulate: (coords: LatLng | null) => this.tracker.simulate(coords),
         onSkip: () => this.triggerNext(),
+        onEvent: () => this.fireEventNow(),
       });
       // An #app, nicht an die Spielfläche: eigener Bereich darunter.
       if (!this.debugPanel.isConnected) this.root.append(this.debugPanel);
@@ -159,7 +171,113 @@ class Game {
     this.tracker.start();
     void this.alerter.registerServiceWorker(import.meta.env.BASE_URL);
     if (this.store.current.wakeLockEnabled) void this.wakeLock.enable();
+    this.events.arm();
+    this.startEventTimer();
     this.render();
+    // Wurde die App geschlossen, während ein Ereignis auf dem Schirm stand,
+    // steht es nach dem Anmelden wieder da — abgerufen war es ja nie.
+    this.maybeFireEvent();
+  }
+
+  /**
+   * Prüft regelmäßig, ob ein Zufallsevent fällig ist. Der Takt ist unkritisch:
+   * Verglichen wird gegen einen gespeicherten Zeitstempel, nicht gegen einen
+   * heruntergezählten Rest. Drosselt der Browser den Timer im Hintergrund oder
+   * friert die Seite ganz ein, kommt das Event beim Zurückkommen nach — dafür
+   * sorgt zusätzlich die Prüfung in onVisibilityChange().
+   *
+   * Höchstens alle 15 s, mindestens aber viermal je kürzester konfigurierter
+   * Wartezeit. Bei den echten Werten kommen genau die 15 s heraus; kurze
+   * Testintervalle bekommen einen entsprechend feineren Takt.
+   */
+  private startEventTimer(): void {
+    if (this.eventTimer !== null || !this.events.enabled) return;
+    const events = this.config.randomEvents;
+    const shortest = Math.min(
+      events.firstAfterMinutes * 60000,
+      events.minMinutes * 60000,
+      events.cooldownSeconds * 1000,
+    );
+    const tick = Math.min(15000, Math.max(1000, shortest / 4));
+    this.eventTimer = window.setInterval(() => this.maybeFireEvent(), tick);
+  }
+
+  private stopEventTimer(): void {
+    if (this.eventTimer !== null) {
+      window.clearInterval(this.eventTimer);
+      this.eventTimer = null;
+    }
+  }
+
+  /**
+   * Zeigt ein fälliges Event — sofern der Bildschirm frei ist. Läuft gerade ein
+   * Stationstext oder steht ein anderes Popup, passiert nichts: Der Termin
+   * bleibt stehen, es geht nichts verloren. Sobald das Team zur Karte
+   * zurückkehrt, bekommt der überfällige Termin in `goTo()` eine kurze
+   * Schonfrist, damit das Event nicht in derselben Sekunde nachschlägt.
+   *
+   * Ein schon gezogenes, aber nie abgerufenes Event hat Vorrang: Es wartet, bis
+   * es weggetippt wurde, und geht selbst dann nicht verloren, wenn die App
+   * zwischendurch geschlossen war.
+   */
+  private maybeFireEvent(): void {
+    if (!this.canShowEvent) return;
+
+    const open = this.events.pendingEvent();
+    if (open) {
+      this.showEvent(open);
+      return;
+    }
+    if (!this.events.isDue) return;
+
+    const event = this.events.draw();
+    if (event) this.showEvent(event);
+  }
+
+  private get canShowEvent(): boolean {
+    const state = this.store.current;
+    return (
+      state.unlocked && state.phase === 'map' && !this.triggerPending && !this.eventPending
+    );
+  }
+
+  private showEvent(event: RandomEvent): void {
+    this.eventPending = true;
+    this.alerter.fire('Zwischenfall!', event.title);
+    showModal({
+      eyebrow: 'Zufallsereignis',
+      title: event.title,
+      content: renderStoryText(event.text),
+      actions: [
+        {
+          label: 'Erledigt',
+          onSelect: () => {
+            this.eventPending = false;
+            // Erst der Abruf startet die Wartezeit für das nächste Ereignis.
+            this.events.acknowledge();
+            // Während das Event stand, kann eine Station fällig geworden sein —
+            // ausgelöst wurde sie dann nicht, um das Popup nicht zu ersetzen.
+            const fix = this.tracker.lastFix;
+            if (fix) this.onPosition(fix);
+          },
+        },
+      ],
+    });
+  }
+
+  /**
+   * Debug-Werkzeug: das nächste Ereignis sofort abrufen, egal wie der Termin
+   * steht — das Gegenstück zu „Station manuell starten". Ein noch offenes
+   * Ereignis wird dabei nicht übersprungen, sondern zuerst gezeigt.
+   */
+  private fireEventNow(): void {
+    if (!this.canShowEvent) {
+      showToast('Erst zurück auf die Karte — während eines Stationstexts kommt kein Ereignis.');
+      return;
+    }
+    const event = this.events.pendingEvent() ?? this.events.draw();
+    if (event) this.showEvent(event);
+    else showToast('In der Config sind keine Zufallsereignisse hinterlegt.');
   }
 
   /**
@@ -178,8 +296,10 @@ class Game {
     // Auf der Passwortseite braucht nichts davon zu laufen.
     this.tracker.stop();
     this.stopReminderTimer();
+    this.stopEventTimer();
     void this.wakeLock.disable();
     this.triggerPending = false;
+    this.eventPending = false;
     this.debugTaps = 0;
 
     this.store.clear();
@@ -216,6 +336,8 @@ class Game {
     this.mapScreen.refreshSize();
     // Den Wake Lock gibt das Betriebssystem im Hintergrund selbst frei.
     void this.wakeLock.reacquireIfWanted();
+    // Während die Seite versteckt war, lief der Timer womöglich gar nicht.
+    this.maybeFireEvent();
 
     // Kam die Erinnerung nicht durch, weil der Browser die Seite eingefroren
     // hat, wird sie hier nachgeholt — dann eben als Hinweis in der App.
@@ -268,8 +390,11 @@ class Game {
       // Nach einer Station kann das Team schon im Radius der nächsten stehen.
       const fix = this.tracker.lastFix;
       if (fix) this.onPosition(fix);
-      // Erst nach der Stationsprüfung: ein Stations-Popup hat Vorrang und darf
-      // nicht vom Benachrichtigungs-Angebot überschrieben werden.
+      // Danach ein offenes Ereignis. Ein fälliger Termin kommt hier nicht zum
+      // Tragen: goTo('map') hat ihn zuvor um die Schonfrist verschoben.
+      this.maybeFireEvent();
+      // Zuletzt: ein Stations- oder Ereignis-Popup hat Vorrang und darf nicht
+      // vom Benachrichtigungs-Angebot überschrieben werden.
       this.maybeOfferNotifications();
       return;
     }
@@ -356,6 +481,10 @@ class Game {
 
   private goTo(phase: 'map' | 'task' | 'storyAfter'): void {
     this.store.update({ phase });
+    // Zurück auf der Karte: Ein Event, das während des Textes fällig geworden
+    // ist, bekommt eine Schonfrist. Sonst schlüge es in derselben Sekunde nach,
+    // in der die Station zu Ende gelesen ist.
+    if (phase === 'map') this.events.deferIfDue();
     this.render();
   }
 
@@ -363,7 +492,10 @@ class Game {
     this.mapScreen.setPosition(fix);
 
     const state = this.store.current;
-    if (state.phase !== 'map' || this.triggerPending) return;
+    // Steht gerade ein Event-Popup, wird die Station aufgeschoben: showModal()
+    // ersetzt einen offenen Dialog, das Event wäre sonst weg. Nach „Erledigt"
+    // wird die Position erneut ausgewertet und die Station kommt sofort.
+    if (state.phase !== 'map' || this.triggerPending || this.eventPending) return;
 
     if (state.stationIndex < this.dueCount(fix.coords)) {
       this.triggerNext();
@@ -459,7 +591,7 @@ class Game {
    * wer den Spielstand schon weiter hat, wäre sonst nie gefragt worden.
    */
   private maybeOfferNotifications(): void {
-    if (this.triggerPending) return;
+    if (this.triggerPending || this.eventPending) return;
     const state = this.store.current;
 
     // Auf dem iPhone im Safari-Tab gibt es die Benachrichtigungs-API gar nicht.
@@ -724,10 +856,12 @@ class Game {
     const state = this.store.current;
     const done = state.completed.length;
     const notificationAction = this.notificationMenuAction();
+    const events = state.eventsShown;
+    const eventNote = events > 0 ? ` ${events} Zwischenfall${events === 1 ? '' : 'e'} überstanden.` : '';
 
     showModal({
       title: 'Menü',
-      message: `${done} von ${this.triggers.length} Stationen erledigt.`,
+      message: `${done} von ${this.triggers.length} Stationen erledigt.${eventNote}`,
       dismissible: true,
       actions: [
         // Erst die Einstellungen, dann Aktionen, dann Schließen — und ganz
@@ -760,6 +894,17 @@ class Game {
         { label: 'Schließen', variant: 'ghost', onSelect: () => {} },
         ...(this.debugMode
           ? [
+              // Gegenstück zu „Station manuell starten", und wie dieses nur
+              // dort sinnvoll, wo es etwas zu öffnen gibt.
+              ...(state.phase === 'map'
+                ? [
+                    {
+                      label: 'Ereignis auslösen',
+                      variant: 'debug' as const,
+                      onSelect: () => this.fireEventNow(),
+                    },
+                  ]
+                : []),
               {
                 label: 'Start/Ziel ändern',
                 variant: 'debug' as const,
@@ -785,6 +930,9 @@ class Game {
     if (!ok) return;
     this.store.reset();
     this.triggerPending = false;
+    this.eventPending = false;
+    // reset() räumt auch Termin, Beutel und Zähler weg — der Plan beginnt neu.
+    this.events.arm();
     this.render();
   }
 }

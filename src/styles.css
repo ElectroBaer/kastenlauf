@@ -453,9 +453,28 @@ body {
   overscroll-behavior: contain;
 }
 
+/* Kleine Zeile über dem Titel — sagt, was für ein Dialog das ist. */
+.modal-eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .modal-title {
   margin: 0 0 8px;
   font-size: 1.35rem;
+}
+
+/* Der Text eines Zufallsereignisses steht als Prosa im Dialog. */
+.modal .prose {
+  margin-bottom: 18px;
+}
+
+.modal .prose p:last-child {
+  margin-bottom: 0;
 }
 
 .modal-message {

@@ -75,6 +75,8 @@ export function closeModal(): void {
 
 export function showModal(options: {
   title: string;
+  /** Kleine Zeile über dem Titel — sagt, um was für einen Dialog es sich handelt. */
+  eyebrow?: string;
   message?: string;
   /** Eigener Inhalt zwischen Text und Buttons, etwa ein Formular. */
   content?: HTMLElement;
@@ -91,6 +93,7 @@ export function showModal(options: {
   const dialog = h(
     'div',
     { class: 'modal', role: 'dialog', 'aria-modal': 'true' },
+    options.eyebrow ? h('p', { class: 'modal-eyebrow' }, options.eyebrow) : null,
     h('h2', { class: 'modal-title' }, options.title),
     options.message ? h('p', { class: 'modal-message' }, options.message) : null,
     options.content ?? null,

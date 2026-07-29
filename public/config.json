@@ -24,6 +24,55 @@
     "notification": true,
     "reminderAfterMinutes": 10
   },
+  "randomEvents": {
+    "enabled": true,
+    "minMinutes": 20,
+    "maxMinutes": 40,
+    "firstAfterMinutes": 5,
+    "cooldownSeconds": 60,
+    "items": [
+      {
+        "id": "bob-shot",
+        "title": "Bob geht zu Boden",
+        "text": "Bob wurde zusammengeschlagen! Er braucht schnell einen Shot, damit er wieder auf die Beine kommt. Trinkt mit ihm zusammen einen Shot."
+      },
+      {
+        "id": "verfolgungsjagd",
+        "title": "Verfolgungsjagd",
+        "text": "\"Den schnapp ich mir!\" Peter nimmt die Verfolgung auf, kommt aber kurze Zeit später atemlos wieder zurück. \"War plötzlich verschwunden, wie vom Erdboden verschluckt!\" Schluckt alle einen Shot."
+      },
+      {
+        "id": "rolls-royce",
+        "title": "Mortons Rolls Royce",
+        "text": "Die drei ??? lassen sich von Morton im goldenen Rolls Royce rumkutschieren. Eine Person setzt sich auf den Kasten. Tragt sie die nächsten 50 m auf dem Kasten."
+      },
+      {
+        "id": "geister",
+        "title": "Peter sieht Gespenster",
+        "text": "Peter hat Angst vor Geistern! Lauft für die nächsten 50 m rückwärts."
+      },
+      {
+        "id": "kirschkuchen",
+        "title": "Tante Mathildas Kirschkuchen",
+        "text": "Tante Mathilda hat ihren berühmten Kirschkuchen gebacken. Macht für die nächsten 5 min eine Verdauungspause."
+      },
+      {
+        "id": "pickup",
+        "title": "Der Pickup muss leer",
+        "text": "Ihr müsst Patrick und Kenneth helfen, den Pickup auszuladen. Alle Flaschen müssen einmal aus dem Bierkasten raus und wieder rein."
+      },
+      {
+        "id": "zwischenmusik",
+        "title": "Zwischenmusik",
+        "text": "*Funky drei ??? Zwischenmusik*. 1 min Tanzpause!"
+      },
+      {
+        "id": "pistole",
+        "title": "Schluss mit lustig",
+        "text": "\"Jetzt ist Schluss mit lustig!\" Sie richtet eine Pistole auf die drei ???. Schießt euch zusammen einen Shot rein, um euch besonders schnell aus dem Staub machen zu können."
+      }
+    ]
+  },
   "intro": {
     "title": "Intro",
     "text": "\"So, Kollegen, das wär geschafft.\" Justus Jonas lehnt sich zufrieden in dem alten Bürostuhl zurück, der vor dem Computer der Zentrale steht — und der unter dem Ersten Detektiv bedenklich knarzt. Auf der durchgesessenen Couch sitzt Peter Shaw und blättert lustlos in einer Zeitschrift, während aus der Dunkelkammer das leise Plätschern von Chemikalien dringt. Bob Andrews ist mal wieder dabei, Fotos zu entwickeln.\n\n\"Was geschafft?\", ruft Bob durch die angelehnte Tür.\n\n\"Ich habe für unser Gebrauchtwarencenter einen Account bei eBay eingerichtet\", verkündet Justus nicht ohne Stolz, \"und soeben die ersten Artikel hochgeladen. Lauter Kram, den uns letzte Woche eine Kundin vorbeigebracht hat — Susan Hayes ist ihr Name. Sie hatte den Dachboden ihrer verstorbenen Mutter Clara ausgemistet.\"\n\nPeter lässt die Zeitschrift sinken. \"eBay? Was ist denn das schon wieder?\"\n\n\"Ach, Peter, du lebst ja wieder völlig hinterm Mond!\", tönt es aus der Dunkelkammer. \"Das ist eine Online —\"\n\nVom Schrank herab krächzt Blacky ohrenbetäubend.\n\n\"Blacky, jetzt halt doch mal den Schnabel!\", zetert Peter. \"Man versteht ja kein Wort!\". \"— eine Online-Verkaufsplattform ist das.\", fährt Bob fort. \"So eine Art Auktionshaus im Internet, nur dass die ganze Welt mitbieten kann.\"\n\n\"Unter anderem\", fährt Justus fort, \"war ein ziemlich alter hölzerner Bierkasten dabei. Wer weiß, vielleicht bringt der als Sammlerstück noch ein paar Dollar.\"\n\nPeter schnaubt. \"Ein alter Bierkasten. Na, da werden die Gebote nur so hageln, Just.\""

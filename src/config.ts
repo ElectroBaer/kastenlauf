@@ -1,4 +1,4 @@
-import type { Config, LatLng } from './types';
+import type { Config, LatLng, RandomEventConfig } from './types';
 
 function fail(message: string): never {
   throw new Error(`config.json: ${message}`);
@@ -18,6 +18,48 @@ function assertLatLng(value: unknown, path: string): LatLng {
   if (point.lat < -90 || point.lat > 90) fail(`${path}.lat liegt außerhalb von -90..90`);
   if (point.lng < -180 || point.lng > 180) fail(`${path}.lng liegt außerhalb von -180..180`);
   return { lat: point.lat, lng: point.lng };
+}
+
+/**
+ * Der `randomEvents`-Block ist optional — eine Config ohne ihn läuft weiter,
+ * dann eben ohne Zwischenfälle. Ist er da, wird er streng geprüft: Ein
+ * Zahlendreher in den Minuten fällt sonst erst mitten im Lauf auf.
+ */
+function readRandomEvents(raw: unknown): RandomEventConfig {
+  const events = (raw ?? {}) as Partial<RandomEventConfig>;
+  const items = Array.isArray(events.items) ? events.items : [];
+
+  const config: RandomEventConfig = {
+    // Ohne Events gibt es nichts einzuschalten.
+    enabled: (events.enabled ?? true) && items.length > 0,
+    minMinutes: events.minMinutes ?? 20,
+    maxMinutes: events.maxMinutes ?? 40,
+    firstAfterMinutes: events.firstAfterMinutes ?? 5,
+    cooldownSeconds: events.cooldownSeconds ?? 60,
+    items,
+  };
+
+  const positive = ['minMinutes', 'maxMinutes', 'firstAfterMinutes', 'cooldownSeconds'] as const;
+  for (const key of positive) {
+    if (typeof config[key] !== 'number' || !Number.isFinite(config[key]) || config[key] < 0) {
+      fail(`randomEvents.${key} muss eine Zahl ab 0 sein`);
+    }
+  }
+  if (config.minMinutes > config.maxMinutes) {
+    fail('randomEvents.minMinutes darf nicht größer als maxMinutes sein');
+  }
+
+  items.forEach((event, index) => {
+    const where = `randomEvents.items[${index}]`;
+    if (!event?.id || typeof event.id !== 'string') fail(`${where}.id fehlt`);
+    if (!event.text || typeof event.text !== 'string') fail(`${where}.text fehlt`);
+    if (!event.title || typeof event.title !== 'string') fail(`${where}.title fehlt`);
+  });
+
+  const ids = items.map((event) => event.id);
+  if (new Set(ids).size !== ids.length) fail('randomEvents.items enthält doppelte ids');
+
+  return config;
 }
 
 /**
@@ -51,6 +93,8 @@ function validate(raw: unknown): Config {
   ) {
     fail('alerts.reminderAfterMinutes muss 0 oder größer sein');
   }
+
+  config.randomEvents = readRandomEvents(config.randomEvents);
 
   if (!config.intro?.text) fail('intro.text fehlt');
   if (!config.outro?.text) fail('outro.text fehlt');

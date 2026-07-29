@@ -57,6 +57,31 @@ export interface AlertConfig {
   reminderAfterMinutes: number;
 }
 
+export interface RandomEvent {
+  /** Eindeutig; steckt im Spielstand, damit der Beutel den Reload überlebt. */
+  id: string;
+  /** Kopfzeile des Popups. */
+  title: string;
+  /** Der Einwurf selbst. Gleiche Auszeichnung wie die Story (`*kursiv*`). */
+  text: string;
+}
+
+export interface RandomEventConfig {
+  enabled: boolean;
+  /** Untere und obere Grenze der ausgewürfelten Wartezeit. */
+  minMinutes: number;
+  maxMinutes: number;
+  /** Vorlauf nach dem ersten Betreten der Karte. */
+  firstAfterMinutes: number;
+  /**
+   * Schonfrist, nachdem die Karte wieder frei ist. Verhindert, dass ein
+   * aufgeschobenes Event in derselben Sekunde aufpoppt, in der ein
+   * Stationstext zu Ende geht.
+   */
+  cooldownSeconds: number;
+  items: RandomEvent[];
+}
+
 export interface Config {
   version: number;
   title: string;
@@ -66,6 +91,7 @@ export interface Config {
   /** Abstand in Metern, ab dem eine Station ausgelöst wird. */
   triggerRadiusMeters: number;
   alerts: AlertConfig;
+  randomEvents: RandomEventConfig;
   intro: StoryPart;
   outro: StoryPart;
   stations: Station[];
@@ -114,4 +140,27 @@ export interface GameState {
    * `null` = die Werte aus der Config gelten.
    */
   routeOverride: { start: LatLng; finish: LatLng } | null;
+  /**
+   * Uhrzeit (ms seit Epoche), zu der das nächste Zufallsevent fällig ist.
+   * `0` = noch keins geplant. Bewusst ein Zeitstempel und kein Countdown: Der
+   * überlebt Reload, gedrosselte Timer und eingefrorene Seiten.
+   */
+  eventDueAt: number;
+  /**
+   * Noch nicht gezogene Event-IDs der laufenden Runde. Ist der Beutel leer,
+   * wird neu gemischt — so kommt jedes Event einmal dran, bevor sich etwas
+   * wiederholt.
+   */
+  eventBag: string[];
+  /** Zuletzt gezeigtes Event; verhindert Wiederholung am Rundenwechsel. */
+  eventLastId: string;
+  /**
+   * Gezogenes, aber noch nicht abgerufenes Ereignis. Steht hier eine ID, wartet
+   * das Ereignis — notfalls über einen Reload hinweg — bis das Team es
+   * weggetippt hat. Erst danach beginnt die Wartezeit für das nächste.
+   * `''` = keins offen.
+   */
+  eventPendingId: string;
+  /** Wie viele Events bisher gezeigt wurden (Anzeige im Menü). */
+  eventsShown: number;
 }
