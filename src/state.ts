@@ -34,6 +34,10 @@ function initialState(): GameState {
     debugEnabled: false,
     authFingerprint: '',
     routeOverride: null,
+    eventDueAt: 0,
+    eventBag: [],
+    eventLastId: '',
+    eventsShown: 0,
   };
 }
 
@@ -69,6 +73,9 @@ export class GameStore {
     //
     // routeOverride wird bewusst NICHT übernommen: Zurücksetzen soll auch die
     // Start-/Zielkoordinaten wieder auf die Werte aus der Config bringen.
+    //
+    // Der Zufallsevent-Plan (Termin, Beutel, Zähler) geht ebenfalls mit zurück:
+    // Er steht in initialState() und wird hier nicht durchgereicht.
     const {
       unlocked,
       notificationsAsked,
@@ -132,6 +139,12 @@ export class GameStore {
         debugEnabled: parsed.debugEnabled === true,
         authFingerprint: typeof parsed.authFingerprint === 'string' ? parsed.authFingerprint : '',
         routeOverride: readRouteOverride(parsed.routeOverride),
+        eventDueAt: typeof parsed.eventDueAt === 'number' ? parsed.eventDueAt : 0,
+        eventBag: Array.isArray(parsed.eventBag)
+          ? parsed.eventBag.filter((id): id is string => typeof id === 'string')
+          : [],
+        eventLastId: typeof parsed.eventLastId === 'string' ? parsed.eventLastId : '',
+        eventsShown: typeof parsed.eventsShown === 'number' ? parsed.eventsShown : 0,
       };
     } catch {
       // Privater Modus oder beschädigter Eintrag: lieber frisch anfangen.
