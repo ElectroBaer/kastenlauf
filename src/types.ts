@@ -154,6 +154,13 @@ export interface GameState {
   eventBag: string[];
   /** Zuletzt gezeigtes Event; verhindert Wiederholung am Rundenwechsel. */
   eventLastId: string;
+  /**
+   * Gezogenes, aber noch nicht abgerufenes Ereignis. Steht hier eine ID, wartet
+   * das Ereignis — notfalls über einen Reload hinweg — bis das Team es
+   * weggetippt hat. Erst danach beginnt die Wartezeit für das nächste.
+   * `''` = keins offen.
+   */
+  eventPendingId: string;
   /** Wie viele Events bisher gezeigt wurden (Anzeige im Menü). */
   eventsShown: number;
 }

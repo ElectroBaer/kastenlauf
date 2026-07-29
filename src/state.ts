@@ -37,6 +37,7 @@ function initialState(): GameState {
     eventDueAt: 0,
     eventBag: [],
     eventLastId: '',
+    eventPendingId: '',
     eventsShown: 0,
   };
 }
@@ -144,6 +145,7 @@ export class GameStore {
           ? parsed.eventBag.filter((id): id is string => typeof id === 'string')
           : [],
         eventLastId: typeof parsed.eventLastId === 'string' ? parsed.eventLastId : '',
+        eventPendingId: typeof parsed.eventPendingId === 'string' ? parsed.eventPendingId : '',
         eventsShown: typeof parsed.eventsShown === 'number' ? parsed.eventsShown : 0,
       };
     } catch {

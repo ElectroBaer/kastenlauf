@@ -148,8 +148,8 @@ erweitern:
 ```json
 "randomEvents": {
   "enabled": true,
-  "minMinutes": 8,
-  "maxMinutes": 18,
+  "minMinutes": 20,
+  "maxMinutes": 40,
   "firstAfterMinutes": 5,
   "cooldownSeconds": 60,
   "items": [
@@ -184,6 +184,13 @@ Bildschirm belegt, bleibt der Termin einfach stehen; zurück auf der Karte kommt
 nach `cooldownSeconds` nach. Umgekehrt wartet auch eine fällige Station, bis das
 Ereignis weggetippt ist.
 
+**Es kommt immer nur eines, nie eine Salve.** Der Termin ist ein einzelner
+Zeitstempel, kein Zähler — war die App zwei Stunden geschlossen, ist trotzdem genau
+ein Ereignis fällig. Und die Wartezeit für das nächste beginnt erst, wenn das Team das
+aktuelle mit „Erledigt" abgerufen hat, nicht schon beim Erscheinen. Ein Ereignis, das
+niemand weggetippt hat, bleibt offen und steht nach einem Reload wieder da; erst
+danach läuft die Uhr weiter.
+
 Der Termin steht als Uhrzeit im Spielstand. Ein Reload verschiebt also nichts, und
 was fällig wurde, während das Handy in der Tasche steckte, kommt beim Zurückkommen
 sofort. `"enabled": false` oder eine leere `items`-Liste schaltet alles ab.
@@ -208,6 +215,7 @@ Debug-Modus an ist. So kann das spielende Team sie nicht versehentlich erwischen
 
 | Eintrag | Was er tut |
 | --- | --- |
+| ***Ereignis auslösen*** | Ruft das nächste [Zufallsereignis](#zufallsereignisse) sofort ab, ohne auf den Termin zu warten — das Gegenstück zu „Station manuell starten". Wie dieses nur auf der Karte. |
 | ***Start/Ziel ändern*** | Koordinaten für eine Testroute setzen. |
 | ***Abmelden und alles löschen*** | Der harte Reset: löscht **alles** Gespeicherte — Fortschritt, Login, Einstellungen, Testkoordinaten und das Debug-Flag — und führt zurück zur Passwort-Seite. Weil das Debug-Flag mit weg ist, ist danach auch der Debug-Modus aus; mit `?debug=1` oder acht Taps ist er sofort zurück. |
 
@@ -284,8 +292,10 @@ Als eigener Bereich unter der Oberfläche erscheint ein Panel mit einem Regler, 
 simulierte Position entlang der Route schiebt — damit lässt sich der komplette Lauf am
 Schreibtisch durchspielen. "GPS" schaltet zurück auf das echte Signal, "Station auslösen"
 springt direkt in die nächste Station, "Ereignis auslösen" zieht sofort ein
-[Zufallsereignis](#zufallsereignisse), ohne auf den Termin zu warten. Das Spielfeld darüber
-wird entsprechend kleiner, das Panel überdeckt also nie Eingabefelder oder Buttons.
+[Zufallsereignis](#zufallsereignisse), ohne auf den Termin zu warten — dasselbe gibt es
+als Menüeintrag **☰ → *Ereignis auslösen***, für Tests auf dem Handy ohne Panel. Das
+Spielfeld darüber wird entsprechend kleiner, das Panel überdeckt also nie Eingabefelder
+oder Buttons.
 
 Zusätzlich gibt es im Debug-Modus **☰ → Start/Ziel ändern**: vier Felder für die
 Koordinaten, mit denen sich eine kurze Testroute vor der Haustür einrichten lässt, statt

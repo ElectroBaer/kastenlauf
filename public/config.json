@@ -26,8 +26,8 @@
   },
   "randomEvents": {
     "enabled": true,
-    "minMinutes": 8,
-    "maxMinutes": 18,
+    "minMinutes": 20,
+    "maxMinutes": 40,
     "firstAfterMinutes": 5,
     "cooldownSeconds": 60,
     "items": [

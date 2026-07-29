@@ -32,8 +32,8 @@ function readRandomEvents(raw: unknown): RandomEventConfig {
   const config: RandomEventConfig = {
     // Ohne Events gibt es nichts einzuschalten.
     enabled: (events.enabled ?? true) && items.length > 0,
-    minMinutes: events.minMinutes ?? 8,
-    maxMinutes: events.maxMinutes ?? 18,
+    minMinutes: events.minMinutes ?? 20,
+    maxMinutes: events.maxMinutes ?? 40,
     firstAfterMinutes: events.firstAfterMinutes ?? 5,
     cooldownSeconds: events.cooldownSeconds ?? 60,
     items,

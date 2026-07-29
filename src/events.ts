@@ -74,13 +74,43 @@ export class RandomEventScheduler {
    * Ein noch nicht fälliger Termin bleibt stehen.
    */
   deferIfDue(): void {
-    if (!this.isDue) return;
+    // Ein offenes Ereignis wartet ohnehin auf seinen Abruf, da gibt es keinen
+    // Termin zu verschieben.
+    if (this.store.current.eventPendingId || !this.isDue) return;
     this.store.update({ eventDueAt: this.now() + this.config.cooldownSeconds * 1000 });
   }
 
   /**
-   * Zieht das nächste Event und schreibt Beutel, Zähler und den neuen Termin
-   * fort. Gibt `null` zurück, wenn nichts konfiguriert ist.
+   * Das gezogene, aber noch nicht abgerufene Ereignis. Es bleibt im Spielstand
+   * stehen, bis das Team es weggetippt hat — auch über einen Reload hinweg.
+   *
+   * Zeigt der Spielstand auf ein Ereignis, das in der Config nicht mehr steht
+   * (Liste inzwischen bearbeitet), wird der Verweis stillschweigend aufgeräumt,
+   * damit das Spiel nicht dauerhaft auf ein Phantom wartet.
+   */
+  pendingEvent(): RandomEvent | null {
+    const id = this.store.current.eventPendingId;
+    if (!id) return null;
+    const event = this.config.items.find((item) => item.id === id);
+    if (event) return event;
+    this.acknowledge();
+    return null;
+  }
+
+  /**
+   * Das Team hat das Ereignis weggetippt. **Erst jetzt** läuft die Zeit für das
+   * nächste — nicht schon beim Anzeigen. Steckte das Handy stundenlang in der
+   * Tasche, kommt deshalb genau ein Ereignis und danach wieder ein vollständiges
+   * Wartefenster, statt einer Salve.
+   */
+  acknowledge(): void {
+    this.store.update({ eventPendingId: '' });
+    this.scheduleNext();
+  }
+
+  /**
+   * Zieht das nächste Ereignis und merkt es als offen vor. Bewusst **ohne**
+   * neuen Termin — den setzt erst `acknowledge()`.
    */
   draw(): RandomEvent | null {
     if (!this.enabled) return null;
@@ -108,9 +138,9 @@ export class RandomEventScheduler {
     this.store.update({
       eventBag: bag,
       eventLastId: id,
+      eventPendingId: id,
       eventsShown: state.eventsShown + 1,
     });
-    this.scheduleNext();
     return event;
   }
 }

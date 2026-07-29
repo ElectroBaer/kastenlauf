@@ -174,6 +174,9 @@ class Game {
     this.events.arm();
     this.startEventTimer();
     this.render();
+    // Wurde die App geschlossen, während ein Ereignis auf dem Schirm stand,
+    // steht es nach dem Anmelden wieder da — abgerufen war es ja nie.
+    this.maybeFireEvent();
   }
 
   /**
@@ -212,9 +215,21 @@ class Game {
    * bleibt stehen, es geht nichts verloren. Sobald das Team zur Karte
    * zurückkehrt, bekommt der überfällige Termin in `goTo()` eine kurze
    * Schonfrist, damit das Event nicht in derselben Sekunde nachschlägt.
+   *
+   * Ein schon gezogenes, aber nie abgerufenes Event hat Vorrang: Es wartet, bis
+   * es weggetippt wurde, und geht selbst dann nicht verloren, wenn die App
+   * zwischendurch geschlossen war.
    */
   private maybeFireEvent(): void {
-    if (!this.events.isDue || !this.canShowEvent) return;
+    if (!this.canShowEvent) return;
+
+    const open = this.events.pendingEvent();
+    if (open) {
+      this.showEvent(open);
+      return;
+    }
+    if (!this.events.isDue) return;
+
     const event = this.events.draw();
     if (event) this.showEvent(event);
   }
@@ -238,6 +253,8 @@ class Game {
           label: 'Erledigt',
           onSelect: () => {
             this.eventPending = false;
+            // Erst der Abruf startet die Wartezeit für das nächste Ereignis.
+            this.events.acknowledge();
             // Während das Event stand, kann eine Station fällig geworden sein —
             // ausgelöst wurde sie dann nicht, um das Popup nicht zu ersetzen.
             const fix = this.tracker.lastFix;
@@ -248,13 +265,17 @@ class Game {
     });
   }
 
-  /** Debug-Knopf: Event sofort ziehen, egal wie der Termin steht. */
+  /**
+   * Debug-Werkzeug: das nächste Ereignis sofort abrufen, egal wie der Termin
+   * steht — das Gegenstück zu „Station manuell starten". Ein noch offenes
+   * Ereignis wird dabei nicht übersprungen, sondern zuerst gezeigt.
+   */
   private fireEventNow(): void {
     if (!this.canShowEvent) {
       showToast('Erst zurück auf die Karte — während eines Stationstexts kommt kein Ereignis.');
       return;
     }
-    const event = this.events.draw();
+    const event = this.events.pendingEvent() ?? this.events.draw();
     if (event) this.showEvent(event);
     else showToast('In der Config sind keine Zufallsereignisse hinterlegt.');
   }
@@ -369,8 +390,11 @@ class Game {
       // Nach einer Station kann das Team schon im Radius der nächsten stehen.
       const fix = this.tracker.lastFix;
       if (fix) this.onPosition(fix);
-      // Erst nach der Stationsprüfung: ein Stations-Popup hat Vorrang und darf
-      // nicht vom Benachrichtigungs-Angebot überschrieben werden.
+      // Danach ein offenes Ereignis. Ein fälliger Termin kommt hier nicht zum
+      // Tragen: goTo('map') hat ihn zuvor um die Schonfrist verschoben.
+      this.maybeFireEvent();
+      // Zuletzt: ein Stations- oder Ereignis-Popup hat Vorrang und darf nicht
+      // vom Benachrichtigungs-Angebot überschrieben werden.
       this.maybeOfferNotifications();
       return;
     }
@@ -870,6 +894,17 @@ class Game {
         { label: 'Schließen', variant: 'ghost', onSelect: () => {} },
         ...(this.debugMode
           ? [
+              // Gegenstück zu „Station manuell starten", und wie dieses nur
+              // dort sinnvoll, wo es etwas zu öffnen gibt.
+              ...(state.phase === 'map'
+                ? [
+                    {
+                      label: 'Ereignis auslösen',
+                      variant: 'debug' as const,
+                      onSelect: () => this.fireEventNow(),
+                    },
+                  ]
+                : []),
               {
                 label: 'Start/Ziel ändern',
                 variant: 'debug' as const,
