@@ -245,7 +245,7 @@ class Game {
     this.eventPending = true;
     this.alerter.fire('Zwischenfall!', event.title);
     showModal({
-      eyebrow: 'Zufallsereignis',
+      eyebrow: 'Ereignis',
       title: event.title,
       content: renderStoryText(event.text),
       actions: [

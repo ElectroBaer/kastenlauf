@@ -54,10 +54,23 @@ function readRandomEvents(raw: unknown): RandomEventConfig {
     if (!event?.id || typeof event.id !== 'string') fail(`${where}.id fehlt`);
     if (!event.text || typeof event.text !== 'string') fail(`${where}.text fehlt`);
     if (!event.title || typeof event.title !== 'string') fail(`${where}.title fehlt`);
+    if (event.first !== undefined && typeof event.first !== 'boolean') {
+      fail(`${where}.first muss true oder false sein`);
+    }
   });
 
   const ids = items.map((event) => event.id);
   if (new Set(ids).size !== ids.length) fail('randomEvents.items enthält doppelte ids');
+
+  // Nur ein Ereignis kann den Lauf eröffnen. Mehrere Markierungen sind fast
+  // sicher ein Versehen — lieber gleich sagen als still das erste nehmen.
+  const pinned = items.filter((event) => event.first);
+  if (pinned.length > 1) {
+    fail(
+      `randomEvents: nur ein Ereignis darf "first": true tragen, hier sind es ${pinned.length} ` +
+        `(${pinned.map((event) => event.id).join(', ')})`,
+    );
+  }
 
   return config;
 }

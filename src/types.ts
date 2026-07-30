@@ -64,6 +64,14 @@ export interface RandomEvent {
   title: string;
   /** Der Einwurf selbst. Gleiche Auszeichnung wie die Story (`*kursiv*`). */
   text: string;
+  /**
+   * Eröffnet den Lauf: Dieses Ereignis kommt immer als erstes, statt aus dem
+   * Beutel gezogen zu werden — gedacht für Aufgaben, die über die ganze Strecke
+   * laufen und deshalb früh bekannt sein müssen. Es nimmt danach nicht mehr am
+   * Beutel teil, wiederholt sich also nicht. Sind mehrere markiert, zählt das
+   * erste in der Liste.
+   */
+  first?: boolean;
 }
 
 export interface RandomEventConfig {
