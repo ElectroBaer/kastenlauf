@@ -108,6 +108,11 @@ export class RandomEventScheduler {
     this.scheduleNext();
   }
 
+  /** Das fest als erstes gesetzte Ereignis, falls eines markiert ist. */
+  private get pinned(): RandomEvent | undefined {
+    return this.config.items.find((item) => item.first);
+  }
+
   /**
    * Zieht das nächste Ereignis und merkt es als offen vor. Bewusst **ohne**
    * neuen Termin — den setzt erst `acknowledge()`.
@@ -116,14 +121,30 @@ export class RandomEventScheduler {
     if (!this.enabled) return null;
 
     const state = this.store.current;
-    const known = new Set(this.config.items.map((item) => item.id));
+    const pinned = this.pinned;
+
+    // Das gesetzte Ereignis eröffnet den Lauf. Solche Aufgaben laufen über die
+    // ganze Strecke ("sammelt Kronkorken") — sie müssen früh bekannt sein und
+    // ergeben später kein zweites Mal Sinn.
+    if (pinned && state.eventsShown === 0) {
+      this.store.update({
+        eventLastId: pinned.id,
+        eventPendingId: pinned.id,
+        eventsShown: 1,
+      });
+      return pinned;
+    }
+
+    // Alles außer dem gesetzten Ereignis wandert in den Beutel.
+    const drawable = this.config.items.filter((item) => item !== pinned);
+    const known = new Set(drawable.map((item) => item.id));
     // Gespeicherte IDs gegen die Config prüfen: Wer Events aus der Config
     // entfernt, hätte sonst Karteileichen im Beutel.
     let bag = state.eventBag.filter((id) => known.has(id));
 
     if (bag.length === 0) {
       bag = shuffle(
-        this.config.items.map((item) => item.id),
+        drawable.map((item) => item.id),
         this.random,
       );
       // Am Rundenwechsel darf nicht zweimal dasselbe kommen.
@@ -132,7 +153,13 @@ export class RandomEventScheduler {
       }
     }
 
-    const id = bag.shift() as string;
+    const id = bag.shift();
+    if (id === undefined) {
+      // Nur ein gesetztes Ereignis konfiguriert und das ist durch: Termin
+      // stilllegen, statt bei jedem Takt erneut ins Leere zu greifen.
+      this.store.update({ eventDueAt: 0 });
+      return null;
+    }
     const event = this.config.items.find((item) => item.id === id) ?? null;
 
     this.store.update({

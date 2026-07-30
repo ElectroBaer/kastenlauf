@@ -32,9 +32,15 @@
     "cooldownSeconds": 60,
     "items": [
       {
-        "id": "bob-shot",
-        "title": "Bob geht zu Boden",
-        "text": "Bob wurde zusammengeschlagen! Er braucht schnell einen Shot, damit er wieder auf die Beine kommt. Trinkt mit ihm zusammen einen Shot."
+        "id": "der-schrottplatz",
+        "title": "Der Schrottplatz",
+        "text": "\"Das war jetzt schon die 3te Person innerhalb von 2 Tagen, die sich nach alten Kronkorken erkundigt hat ... seltsam.\" Sammelt über den gesamten Bierkastenlauf hinweg möglichst viele Kronkorken!",
+        "first": true
+      },
+      {
+        "id": "voll-auf-die-zwoelf",
+        "title": "Voll auf die Zwölf",
+        "text": "Bob wurde niedergeschlagen! Trinkt mit ihm zusammen Wasser, damit er schnell wieder auf die Beine kommt."
       },
       {
         "id": "verfolgungsjagd",
@@ -42,34 +48,64 @@
         "text": "\"Den schnapp ich mir!\" Peter nimmt die Verfolgung auf, kommt aber kurze Zeit später atemlos wieder zurück. \"War plötzlich verschwunden, wie vom Erdboden verschluckt!\" Schluckt alle einen Shot."
       },
       {
-        "id": "rolls-royce",
-        "title": "Mortons Rolls Royce",
-        "text": "Die drei ??? lassen sich von Morton im goldenen Rolls Royce rumkutschieren. Eine Person setzt sich auf den Kasten. Tragt sie die nächsten 50 m auf dem Kasten."
+        "id": "im-goldenen-rolls-royce",
+        "title": "Im goldenen Rolls Royce",
+        "text": "Die drei ??? lassen sich von Morton im goldenen Rolls Royce rumkutschieren. Eine Person setzt sich auf den Kasten, ihr tragt sie die nächsten 50m."
       },
       {
-        "id": "geister",
-        "title": "Peter sieht Gespenster",
-        "text": "Peter hat Angst vor Geistern! Lauft für die nächsten 50 m rückwärts."
+        "id": "schisser-shaw",
+        "title": "Schisser Shaw",
+        "text": "Peter hat Angst vor Geistern! Lauft für die nächsten 50m rückwärts."
       },
       {
         "id": "kirschkuchen",
-        "title": "Tante Mathildas Kirschkuchen",
-        "text": "Tante Mathilda hat ihren berühmten Kirschkuchen gebacken. Macht für die nächsten 5 min eine Verdauungspause."
+        "title": "Kirschkuchen",
+        "text": "Tante Mathilda hat ihren berühmten Kirschkuchen gebacken. Macht für die nächsten 5min eine Verdauungspause."
       },
       {
-        "id": "pickup",
-        "title": "Der Pickup muss leer",
+        "id": "anpacken",
+        "title": "Anpacken",
         "text": "Ihr müsst Patrick und Kenneth helfen, den Pickup auszuladen. Alle Flaschen müssen einmal aus dem Bierkasten raus und wieder rein."
       },
       {
-        "id": "zwischenmusik",
-        "title": "Zwischenmusik",
-        "text": "*Funky drei ??? Zwischenmusik*. 1 min Tanzpause!"
+        "id": "funky-drei-zwischenmusik",
+        "title": "Funky drei ??? Zwischenmusik",
+        "text": "1min Tanzpause!"
       },
       {
-        "id": "pistole",
-        "title": "Schluss mit lustig",
-        "text": "\"Jetzt ist Schluss mit lustig!\" Sie richtet eine Pistole auf die drei ???. Schießt euch zusammen einen Shot rein, um euch besonders schnell aus dem Staub machen zu können."
+        "id": "schluss-mit-lustig",
+        "title": "Schluss mit Lustig",
+        "text": "Sie richtet eine Pistole auf die drei ???. \"Hände hoch oder ich schieße!\" Schießt euch zusammen einen Shot rein, um euch besonders schnell aus dem Staub machen zu können."
+      },
+      {
+        "id": "nur-noch-erdnussbutterbrot",
+        "title": "Nur noch Erdnussbutterbrot",
+        "text": "Justus macht eine Diät. Trinkverbot für die nächsten 10min."
+      },
+      {
+        "id": "hausfriedensbruch",
+        "title": "Hausfriedensbruch",
+        "text": "Justus überredet euch zu einem Einbruch. Öffnet eine Bierflasche mit etwas, das ihr in eurer Umgebung findet."
+      },
+      {
+        "id": "telefonlawine",
+        "title": "Telefonlawine",
+        "text": "\"Jede:r von uns ruft 5 Freund:innen an, von denen dann wieder jede:r 5 Freund:innen anruft, und so weiter ...\". Ruft ein anderes Team an und fragt nach, wie es bei ihnen so läuft."
+      },
+      {
+        "id": "sportskanone",
+        "title": "Sportskanone",
+        "text": "Peter trifft sich mit Jeffrey zum Sport. Macht insgesamt 40 Liegestützen."
+      },
+      {
+        "id": "spezialgelagerter-sonderfall",
+        "title": "Spezialgelagerter Sonderfall",
+        "text": "Mischt euch ein Spezialgelagertes Sondergetränk aus mindestens 4 verschiedenen Flüssigkeiten und trinkt es zusammen."
+      },
+      {
+        "id": "geschaefte",
+        "title": "Geschäfte",
+        "text": "\"Was springt dabei für mich raus?\" Rubbish George verlangt unverschämt viel Geld für eine Information. Ihr dürft mit einem anderen Team 2 gegen 1 Bier tauschen, in eine Richtung eurer Wahl."
       }
     ]
   },

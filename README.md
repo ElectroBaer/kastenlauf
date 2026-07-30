@@ -154,9 +154,15 @@ erweitern:
   "cooldownSeconds": 60,
   "items": [
     {
-      "id": "zwischenmusik",
-      "title": "Zwischenmusik",
-      "text": "*Funky drei ??? Zwischenmusik*. 1 min Tanzpause!"
+      "id": "der-schrottplatz",
+      "title": "Der Schrottplatz",
+      "text": "Sammelt über den gesamten Bierkastenlauf hinweg möglichst viele Kronkorken!",
+      "first": true
+    },
+    {
+      "id": "funky-drei-zwischenmusik",
+      "title": "Funky drei ??? Zwischenmusik",
+      "text": "1min Tanzpause!"
     }
   ]
 }
@@ -165,6 +171,24 @@ erweitern:
 Für ein neues Ereignis reicht ein weiterer Eintrag in `items` — `id` muss eindeutig
 sein, `text` darf dieselben Auszeichnungen wie die Story benutzen (`**fett**`,
 `*kursiv*`, Leerzeile = neuer Absatz).
+
+Bequemer geht es über **`events.md`**: Dort steht je Zeile ein Ereignis im Format
+`* *Titel:* Text`. Übertragen mit
+
+```bash
+node tools/events-to-config.mjs
+```
+
+Das tauscht ausschließlich `items` aus und lässt Route, Story und Zeiteinstellungen
+in Ruhe — im Gegensatz zu `story-to-config.mjs` also beliebig oft wiederholbar. Die
+`id` wird aus dem Titel erzeugt.
+
+**`"first": true`** markiert das Ereignis, das den Lauf eröffnet: Es kommt immer als
+erstes, statt aus dem Beutel gezogen zu werden, und nimmt danach nicht mehr am Beutel
+teil. Gedacht für Aufgaben, die über die ganze Strecke laufen („sammelt Kronkorken")
+— die müssen früh bekannt sein und ergeben später kein zweites Mal Sinn. `events.md`
+markiert dafür immer den **ersten Eintrag der Datei**. Mehr als eine Markierung lehnt
+die App mit einer Fehlermeldung ab.
 
 **Ausgelöst wird nach Zeit, nicht nach Strecke.** Nach jedem Ereignis wird die
 Wartezeit bis zum nächsten neu ausgewürfelt, gleichverteilt zwischen `minMinutes` und
@@ -177,7 +201,7 @@ Einwurf am willkommensten.
 Ausgewählt wird per **Beutel**: Alle Ereignisse werden gemischt und der Reihe nach
 gezogen; erst wenn alle dran waren, wird neu gemischt. So wiederholt sich nichts,
 solange noch etwas Ungesehenes übrig ist, und auch am Rundenwechsel kommt nicht
-zweimal dasselbe.
+zweimal dasselbe. Ausgenommen ist das mit `first` markierte Eröffnungsereignis.
 
 Ein Ereignis unterbricht **nie** einen Stationstext oder ein Stations-Popup. Ist der
 Bildschirm belegt, bleibt der Termin einfach stehen; zurück auf der Karte kommt es
@@ -195,8 +219,8 @@ Der Termin steht als Uhrzeit im Spielstand. Ein Reload verschiebt also nichts, u
 was fällig wurde, während das Handy in der Tasche steckte, kommt beim Zurückkommen
 sofort. `"enabled": false` oder eine leere `items`-Liste schaltet alles ab.
 
-`events.md` ist — wie `story.md` — nur die lesbare Fassung im Repo und wird zur
-Laufzeit nicht geladen. Maßgeblich ist `config.json`.
+`events.md` wird zur Laufzeit **nicht** geladen — maßgeblich ist `config.json`. Es ist
+die bequeme Schreibfassung, aus der `tools/events-to-config.mjs` überträgt.
 
 ## Das Menü (☰)
 
@@ -402,4 +426,5 @@ src/debug.ts          Positionssimulator (?debug=1)
 tools/hash-password.mjs    Passwort-Hash erzeugen
 tools/make-icons.mjs       App-Icons erzeugen
 tools/story-to-config.mjs  story.md → config.json (einmalig)
+tools/events-to-config.mjs events.md → config.json (beliebig oft)
 ```
