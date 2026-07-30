@@ -40,16 +40,23 @@ export function createDebugPanel(options: {
   return h(
     'div',
     { class: 'debug-panel' },
+    // Anzeige und Knöpfe bewusst in getrennten Zeilen: Nebeneinander lassen
+    // die drei Knöpfe der Anzeige keinen Platz, sie wurde auf ein Wort je
+    // Zeile zusammengequetscht.
+    h('div', { class: 'debug-row' }, h('strong', {}, 'Debug'), readout),
+    // Kurze Aufschriften, damit die drei Knöpfe auch auf einem schmalen Handy
+    // nebeneinander passen. Die ausgeschriebene Bedeutung steckt im aria-label
+    // und im Tooltip — verloren geht sie also nicht.
     h(
       'div',
-      { class: 'debug-row' },
-      h('strong', {}, 'Debug'),
-      readout,
+      { class: 'debug-actions' },
       h(
         'button',
         {
           class: 'btn btn-ghost btn-small',
           type: 'button',
+          'aria-label': 'Auf echtes GPS zurückschalten',
+          title: 'Auf echtes GPS zurückschalten',
           onclick: () => {
             slider.value = '0';
             readout.textContent = 'GPS aktiv';
@@ -60,13 +67,25 @@ export function createDebugPanel(options: {
       ),
       h(
         'button',
-        { class: 'btn btn-ghost btn-small', type: 'button', onclick: options.onSkip },
-        'Station auslösen',
+        {
+          class: 'btn btn-ghost btn-small',
+          type: 'button',
+          'aria-label': 'Station auslösen',
+          title: 'Station auslösen',
+          onclick: options.onSkip,
+        },
+        'Station',
       ),
       h(
         'button',
-        { class: 'btn btn-ghost btn-small', type: 'button', onclick: options.onEvent },
-        'Ereignis auslösen',
+        {
+          class: 'btn btn-ghost btn-small',
+          type: 'button',
+          'aria-label': 'Ereignis auslösen',
+          title: 'Ereignis auslösen',
+          onclick: options.onEvent,
+        },
+        'Ereignis',
       ),
     ),
     slider,

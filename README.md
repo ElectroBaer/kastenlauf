@@ -290,8 +290,8 @@ steht die Einstellung hinterher wieder so wie vorher. Eine Pause von mehr als 80
 die Zählung zurück, normales Bedienen des Schalters löst also nichts aus.
 Als eigener Bereich unter der Oberfläche erscheint ein Panel mit einem Regler, der eine
 simulierte Position entlang der Route schiebt — damit lässt sich der komplette Lauf am
-Schreibtisch durchspielen. "GPS" schaltet zurück auf das echte Signal, "Station auslösen"
-springt direkt in die nächste Station, "Ereignis auslösen" zieht sofort ein
+Schreibtisch durchspielen. "GPS" schaltet zurück auf das echte Signal, "Station"
+springt direkt in die nächste Station, "Ereignis" zieht sofort ein
 [Zufallsereignis](#zufallsereignisse), ohne auf den Termin zu warten — dasselbe gibt es
 als Menüeintrag **☰ → *Ereignis auslösen***, für Tests auf dem Handy ohne Panel. Das
 Spielfeld darüber wird entsprechend kleiner, das Panel überdeckt also nie Eingabefelder

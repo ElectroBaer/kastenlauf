@@ -570,7 +570,7 @@ body {
 
 .debug-row {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
   margin-bottom: 8px;
 }
@@ -579,6 +579,33 @@ body {
   flex: 1;
   min-width: 0;
   color: var(--text-muted);
+}
+
+/*
+ * Eigene Zeile für die Knöpfe. Zu dritt bleibt neben ihnen kein Platz für die
+ * Anzeige — sie sind inhaltsbreit und geben nicht nach, der Text wurde deshalb
+ * auf ein Wort je Zeile umbrochen. Untereinander hat beides genug Raum.
+ */
+.debug-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.debug-actions .btn {
+  /* Gleichmäßig aufteilen und nicht mitten im Wort umbrechen. */
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+/*
+ * Der senkrechte Abstand aus `.btn + .btn` ist für gestapelte Knöpfe gedacht.
+ * In einer Reihe schiebt er die Folgeknöpfe nach unten und macht sie dadurch
+ * unterschiedlich hoch.
+ */
+.debug-actions .btn + .btn {
+  margin-top: 0;
 }
 
 .debug-slider {
